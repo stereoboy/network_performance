@@ -16,7 +16,7 @@ if __name__ == '__main__':
     s = socket.socket()
 
     # Define the port on which you want to connect
-    port = 12345
+    port = 9090
 
     # connect to the server on local computer
     s.connect(('127.0.0.1', port))
@@ -50,6 +50,8 @@ if __name__ == '__main__':
         start = time.time()
         elapsed_time_queue.append(elapsed)
         count += 1
+        if count > 100:
+            break
 
     # close the connection
     s.close()

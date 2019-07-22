@@ -41,6 +41,7 @@ while True:
     start = time.time()
     global_start = time.time()
     count = 0
+    closed = False
 
     while True:
         if count > 0 and count%500 == 0:
@@ -53,6 +54,10 @@ while True:
             if len(message) == data_size:
                 #c.send("0")
                 break
+            elif len(message) == 0:
+                print("closed")
+                closed = True
+                break
             else:
                 print("error")
                 #c.send("1")
@@ -64,6 +69,8 @@ while True:
         start = time.time()
         elapsed_time_queue.append(elapsed)
         count += 1
+        if closed:
+            break
 
     # Close the connection with the client 
     c.close()
