@@ -62,16 +62,16 @@ while True:
                 message = buf
                 buf = recv_data[remain_offset:]
                 break
-            elif len(buf) == 0:
+            elif len(recv_data) == 0:
                 print("closed")
                 closed = True
                 break
             else:
-                pass
                 #print("data size: {}<->{}".format(len(buf), data_size))
+                pass
                 #c.send("1")
                 #message = c.recv(640*48*4*4)
-        #print("message_size: {}".format(len(message)))
+        print("message_size: {}".format(len(message)))
         end = time.time()
         global_end = time.time()
         elapsed = end - start
