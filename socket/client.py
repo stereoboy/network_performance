@@ -19,8 +19,8 @@ if __name__ == '__main__':
     port = 9090
 
     # connect to the server on local computer
-    s.connect(('127.0.0.1', port))
-    #s.connect(('192.168.0.224', port))
+    #s.connect(('127.0.0.1', port))
+    s.connect(('192.168.0.224', port))
 
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
@@ -31,12 +31,19 @@ if __name__ == '__main__':
     while True:
         if count > 0 and count%100 == 0:
             print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
-            print("\terror {} fps".format(err_cnt/(global_end - global_start)))
-        data = np.zeros((640, 480, 4), dtype=np.uint8).tostring()
-        # receive data from the server
-        sent = s.send(data)
-        if sent != len(data):
-            print("remain:{}".format(len(data) - sent))
+        raw_data = np.zeros((640, 480, 4), dtype=np.uint8).reshape(-1, 1)
+        raw_data[0] = 25
+        offset = 0
+        size   = 16384*10
+        #size   = 640*480*4
+        while True:
+            #raw_data[offset] = 25
+            data = raw_data[offset:offset + size].tostring()
+            offset += size
+            # receive data from the server
+            sent = s.send(data)
+            if sent != len(data):
+                print("remain:{}".format(len(data) - sent))
 #        a = s.recv(10)
 #        if a == "1":
 #            err_cnt += 1
@@ -44,6 +51,8 @@ if __name__ == '__main__':
 #            time.sleep(0.005)
 #            data = np.zeros((640, 48, 4), dtype=np.uint8).tostring()
 #            s.send(data)
+            if offset >= len(raw_data):
+                break
         time.sleep(0.004)
         end = time.time()
         global_end = time.time()
