@@ -36,6 +36,7 @@ while True:
     print('Got connection from', addr)
 
     data_size = 640*480*4
+    #data_size = 16384
 
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
@@ -43,14 +44,18 @@ while True:
     count = 0
     closed = False
 
+    buf = b""
     while True:
         if count > 0 and count%100 == 0:
             print("\t{} fps".format(1.0/np.mean(elapsed_time_queue)))
 
         # send a thank you message to the client.
-        buf = b""
         while True:
             recv_data = c.recv(data_size)
+#            print("recv_data size:{}, recv_data[0]: {}".format(len(recv_data), recv_data[0]))
+#            for i in range(len(recv_data)):
+#                if recv_data[i] == 25:
+#                    print(i)
             if len(buf) + len(recv_data) <= data_size:
                 remain_offset = len(recv_data)
                 buf += recv_data
@@ -58,6 +63,7 @@ while True:
                 remain_offset = data_size - len(buf)
                 buf += recv_data[:remain_offset]
 
+#            print("\tbuf size: {}", len(buf))
             if len(buf) == data_size:
                 message = buf
                 buf = recv_data[remain_offset:]
@@ -71,7 +77,7 @@ while True:
                 pass
                 #c.send("1")
                 #message = c.recv(640*48*4*4)
-        print("message_size: {}".format(len(message)))
+
         end = time.time()
         global_end = time.time()
         elapsed = end - start
@@ -80,6 +86,15 @@ while True:
         count += 1
         if closed:
             break
+#        for i in range(data_size):
+#            if message[i] == 25:
+#                print(i)
+#
+        print("message_size: {}, message_data: {}".format(len(message), message[0]))
+        assert(message[0] == 25)
+
+#        if count > 3:
+#            break
 
     # Close the connection with the client 
     c.close()
