@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
     # connect to the server on local computer
     s.connect(('127.0.0.1', port))
+    #s.connect(('192.168.0.224', port))
 
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     err_cnt = 0
 
     while True:
-        if count > 0 and count%30 == 0:
+        if count > 0 and count%100 == 0:
             print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
             print("\terror {} fps".format(err_cnt/(global_end - global_start)))
         data = np.zeros((640, 480, 4), dtype=np.uint8).tostring()
@@ -50,8 +51,6 @@ if __name__ == '__main__':
         start = time.time()
         elapsed_time_queue.append(elapsed)
         count += 1
-        if count > 100:
-            break
 
     # close the connection
     s.close()

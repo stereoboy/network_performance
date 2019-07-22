@@ -44,22 +44,31 @@ while True:
     closed = False
 
     while True:
-        if count > 0 and count%500 == 0:
+        if count > 0 and count%100 == 0:
             print("\t{} fps".format(1.0/np.mean(elapsed_time_queue)))
 
         # send a thank you message to the client.
-        message = ""
+        buf = b""
         while True:
-            message += c.recv(data_size)
-            if len(message) == data_size:
-                #c.send("0")
+            recv_data = c.recv(data_size)
+            if len(buf) + len(recv_data) <= data_size:
+                remain_offset = len(recv_data)
+                buf += recv_data
+            else:
+                remain_offset = data_size - len(buf)
+                buf += recv_data[:remain_offset]
+
+            if len(buf) == data_size:
+                message = buf
+                buf = recv_data[remain_offset:]
                 break
-            elif len(message) == 0:
+            elif len(buf) == 0:
                 print("closed")
                 closed = True
                 break
             else:
-                print("error")
+                pass
+                #print("data size: {}<->{}".format(len(buf), data_size))
                 #c.send("1")
                 #message = c.recv(640*48*4*4)
         #print("message_size: {}".format(len(message)))
