@@ -7,6 +7,8 @@ import numpy as np
 import time
 import collections
 import queue
+import argparse
+import sys
 import cv2
 
 q = queue.Queue()
@@ -26,28 +28,36 @@ def disconnect():
     print('disconnected from server')
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='This is toy client to test comm latency')
+    parser.add_argument('-r', '--remote', action='store_true', default=False)
+    options = parser.parse_args(sys.argv[1:])
+    print(options)
 
-    sio.connect('http://localhost:5000')
-    #sio.connect('http://192.168.0.224:5000')
+    if options.remote:
+        sio.connect('http://192.168.0.224:5000')
+    else:
+        #sio.connect('http://localhost:9090')
+        sio.connect('http://127.0.0.1:9090')
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
     count = 0
 
-    img = cv2.imread('../image.png', cv2.IMREAD_UNCHANGED)
+    #img = cv2.imread('../image.png', cv2.IMREAD_UNCHANGED)
+    img = np.zeros((480, 640, 4), dtype=np.uint8)
+    print("sample image shape = {}".format(img.shape))
 
     while True:
         data = img.tostring()
         #print(len(data))
-        sio.emit('ch1', data)
-        q.get()
+        sio.emit('ch1', bytes(data))
+#        q.get()
         end = time.time()
         elapsed = end - start
         start = time.time()
         elapsed_time_queue.append(elapsed)
-        if count%30 == 0:
-            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
         count += 1
-
+        if count%100 == 0:
+            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
 
 
 
