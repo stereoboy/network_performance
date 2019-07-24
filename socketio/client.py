@@ -34,10 +34,10 @@ if __name__ == '__main__':
     print(options)
 
     if options.remote:
-        sio.connect('http://192.168.0.224:9090')
+        sio.connect('http://192.168.0.224:9090', transports='polling')
     else:
         #sio.connect('http://localhost:9090')
-        sio.connect('http://127.0.0.1:9090')
+        sio.connect('http://127.0.0.1:9090', transports='polling')
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
     count = 0
