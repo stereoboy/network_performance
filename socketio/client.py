@@ -50,7 +50,7 @@ if __name__ == '__main__':
         data = img.tostring()
         #print(len(data))
         sio.emit('ch1', bytes(data))
-#        q.get()
+        q.get()
         end = time.time()
         elapsed = end - start
         start = time.time()
