@@ -1,28 +1,33 @@
+'''
+    reference: https://github.com/websocket-client/websocket-client
+'''
 from websocket import create_connection
 import numpy as np
 import time
 import collections
-if __name__ == "__main__":
+import cv2
 
+def main():
+    img = cv2.imread('../image.png', cv2.IMREAD_UNCHANGED)
+    print('img.shape={}'.format(img.shape))
     ws = create_connection("ws://127.0.0.1:9090")
-    print("Sending 'Hello, World'...")
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
-    count = 9
+    count = 0
     while True:
-        if count%30 == 0:
-            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
-        data = np.zeros((640, 480, 4), dtype=np.uint8).tostring()
-        #print(len(data))
-        ws.send(data)
-#        print("Receiving...")
-#        result =  ws.recv()
-#        print("Received '%s'" % result)
+        data = img.tostring()
+        ws.send_binary(data)
+        #result =  ws.recv()
 
         end = time.time()
         elapsed = end - start
         start = time.time()
         elapsed_time_queue.append(elapsed)
         count += 1
+        if count%100 == 0:
+            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
         
     ws.close()
+
+if __name__ == "__main__":
+    main()
