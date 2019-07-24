@@ -34,15 +34,15 @@ class TestWebSocket(WebSocketHandler):
   unregister_timeout = 10.0               # seconds
   bson_only_mode = False
 
-  count = 0
-  start = time.time()
-  elapsed_time_queue = collections.deque(maxlen=100)
 
   def __init__(self, application, request, **kwargs):
     super(TestWebSocket, self).__init__(application, request, **kwargs)
 
   def open(self):
     print("open()")
+    self.count = 0
+    self.elapsed_time_queue = collections.deque(maxlen=100)
+    self.start = time.time()
 
   def on_message(self, message):
     self.end = time.time()
