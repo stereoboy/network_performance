@@ -26,11 +26,9 @@ if __name__ == '__main__':
     count = 0
 
     while True:
-        if count%30 == 0:
-            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
-        data = np.zeros((640, 480, 4), dtype=np.uint8).tostring()
+        data = np.zeros((480, 640, 4), dtype=np.uint8).tostring()
         #print(len(data))
-        #sio.emit(data)
+        sio.emit(data)
 #        print("Receiving...")
 #        result =  ws.recv()
 #        print("Received '%s'" % result)
@@ -39,6 +37,8 @@ if __name__ == '__main__':
         elapsed = end - start
         start = time.time()
         elapsed_time_queue.append(elapsed)
+        if count%30 == 0:
+            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
         count += 1
 
 
