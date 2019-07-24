@@ -17,6 +17,8 @@ import logging
 import sys
 import numpy as np
 import cv2
+import time
+import collections
 
 class TestWebSocket(WebSocketHandler):
   client_id_seed = 0
@@ -32,6 +34,10 @@ class TestWebSocket(WebSocketHandler):
   unregister_timeout = 10.0               # seconds
   bson_only_mode = False
 
+  count = 0
+  start = time.time()
+  elapsed_time_queue = collections.deque(maxlen=100)
+
   def __init__(self, application, request, **kwargs):
     super(TestWebSocket, self).__init__(application, request, **kwargs)
 
@@ -39,6 +45,13 @@ class TestWebSocket(WebSocketHandler):
     print("open()")
 
   def on_message(self, message):
+    self.end = time.time()
+    elapsed = self.end - self.start
+    self.start = time.time()
+    self.elapsed_time_queue.append(elapsed)
+    self.count += 1
+    if self.count%100 == 0:
+        print("{} fps".format(1.0/np.mean(self.elapsed_time_queue)))
     #print("message_size: {}".format(len(message)))
     #self.write_message('ME', binary=False)
     pass
