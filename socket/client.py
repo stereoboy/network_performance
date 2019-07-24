@@ -53,7 +53,7 @@ if __name__ == '__main__':
 #            s.send(data)
             if offset >= len(raw_data):
                 break
-        time.sleep(0.004)
+        time.sleep(0.002)
         end = time.time()
         global_end = time.time()
         elapsed = end - start
