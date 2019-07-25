@@ -19,19 +19,19 @@ if __name__ == '__main__':
     options = parser.parse_args(sys.argv[1:])
     print(options)
 
-    if options.remote:
+
+    if options.unix:
         # Create a socket object
         s = socket.socket(socket.AF_UNIX)
-        s.connect(('192.168.0.224', port))
+        s.connect('.unix_socket')
     else:
         # Create a socket object
         s = socket.socket(socket.AF_INET)
 
         # Define the port on which you want to connect
         port = 9090
-
-        if options.unix:
-            s.connect('.unix_socket')
+        if options.remote:
+            s.connect(('192.168.0.224', port))
         else:
             # connect to the server on local computer
             s.connect(('127.0.0.1', port))
@@ -68,6 +68,7 @@ if __name__ == '__main__':
             if offset >= len(raw_data):
                 break
 #        time.sleep(0.002)
+        r = s.recv(1)
         end = time.time()
         global_end = time.time()
         elapsed = end - start

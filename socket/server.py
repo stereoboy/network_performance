@@ -92,6 +92,7 @@ if __name__ == '__main__':
                     #c.send("1")
                     #message = c.recv(640*48*4*4)
 
+            c.send(b'\x00')
             end = time.time()
             global_end = time.time()
             elapsed = end - start
