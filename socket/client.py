@@ -8,19 +8,33 @@ import socket
 import numpy as np
 import time
 import collections
+import argparse
+import sys
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='This is toy client to test comm latency')
+    parser.add_argument('-r', '--remote', action='store_true', default=False)
+    parser.add_argument('-u', '--unix', action='store_true', default=False)
+    options = parser.parse_args(sys.argv[1:])
+    print(options)
 
-    # Create a socket object
-    s = socket.socket()
+    if options.remote:
+        # Create a socket object
+        s = socket.socket(socket.AF_UNIX)
+        s.connect(('192.168.0.224', port))
+    else:
+        # Create a socket object
+        s = socket.socket(socket.AF_INET)
 
-    # Define the port on which you want to connect
-    port = 9090
+        # Define the port on which you want to connect
+        port = 9090
 
-    # connect to the server on local computer
-    #s.connect(('127.0.0.1', port))
-    s.connect(('192.168.0.224', port))
+        if options.unix:
+            s.connect('.unix_socket')
+        else:
+            # connect to the server on local computer
+            s.connect(('127.0.0.1', port))
 
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
@@ -53,7 +67,7 @@ if __name__ == '__main__':
 #            s.send(data)
             if offset >= len(raw_data):
                 break
-        time.sleep(0.002)
+#        time.sleep(0.002)
         end = time.time()
         global_end = time.time()
         elapsed = end - start
