@@ -10,12 +10,14 @@ import time
 import collections
 import argparse
 import sys
+import cv2
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='This is toy client to test comm latency')
     parser.add_argument('-r', '--remote', action='store_true', default=False)
     parser.add_argument('-u', '--unix', action='store_true', default=False)
+    parser.add_argument('-c', '--check', action='store_true', default=False)
     options = parser.parse_args(sys.argv[1:])
     print(options)
 
@@ -42,10 +44,12 @@ if __name__ == '__main__':
     count = 0
     err_cnt = 0
 
+    img = cv2.imread('../image.png', cv2.IMREAD_UNCHANGED)
     while True:
         if count > 0 and count%100 == 0:
             print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
-        raw_data = np.zeros((640, 480, 4), dtype=np.uint8).reshape(-1, 1)
+#        raw_data = np.zeros((640, 480, 4), dtype=np.uint8).reshape(-1, 1)
+        raw_data = img.flatten()
         raw_data[0] = 25
         offset = 0
         size   = 16384*10
@@ -68,7 +72,8 @@ if __name__ == '__main__':
             if offset >= len(raw_data):
                 break
 #        time.sleep(0.002)
-        r = s.recv(1)
+        if options.check:
+            r = s.recv(1)
         end = time.time()
         global_end = time.time()
         elapsed = end - start

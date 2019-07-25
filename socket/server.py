@@ -8,10 +8,12 @@ import collections
 import numpy as np
 import argparse
 import sys
+import cv2
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='This is toy server to test comm latency')
     parser.add_argument('-u', '--unix', action='store_true', default=False)
+    parser.add_argument('-c', '--check', action='store_true', default=False)
     options = parser.parse_args(sys.argv[1:])
     print(options)
 
@@ -92,7 +94,8 @@ if __name__ == '__main__':
                     #c.send("1")
                     #message = c.recv(640*48*4*4)
 
-            c.send(b'\x00')
+            if options.check:
+                c.send(b'\x00')
             end = time.time()
             global_end = time.time()
             elapsed = end - start
@@ -101,6 +104,11 @@ if __name__ == '__main__':
             count += 1
             if closed:
                 break
+
+#            img = np.frombuffer(message, dtype=np.uint8).reshape( (480, 640, 4))
+#            cv2.imshow('display', img)
+#            cv2.waitKey(1)
+
 #        for i in range(data_size):
 #            if message[i] == 25:
 #                print(i)
