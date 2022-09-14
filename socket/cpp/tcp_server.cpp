@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <csignal>
+#include <exception>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -48,12 +50,27 @@ void func(int connfd)
     }
 }
 
+class InterruptException : public std::exception
+{
+public:
+    InterruptException(int s) : S(s) {}
+    int S;
+};
+
+void signal_handler(int s)
+{
+    throw InterruptException(s);
+}
+
 // Driver function
 int main()
 {
     int sockfd, connfd;
     socklen_t len;
     struct sockaddr_in servaddr, cli;
+
+    // init signal handler
+    std::signal(SIGINT, signal_handler);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -112,7 +129,11 @@ int main()
 
 
     // Function for chatting between client and server
-    func(connfd);
+    try {
+        func(connfd);
+    } catch (InterruptException &e) {
+        fprintf(stderr, "Terminated by Interrupt %s\n", e.what());
+    }
 
     // After chatting close the socket
     close(sockfd);

@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <csignal>
+#include <exception>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -39,10 +41,25 @@ void func(int sockfd)
     }
 }
 
+class InterruptException : public std::exception
+{
+public:
+    InterruptException(int s) : S(s) {}
+    int S;
+};
+
+void signal_handler(int s)
+{
+    throw InterruptException(s);
+}
+
 int main(int argc, char *argv[])
 {
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
+
+    // init signal handler
+    std::signal(SIGINT, signal_handler);
 
     // reference
     //  - https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
@@ -114,10 +131,12 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
     }
 
-
-
     // function for chat
-    func(sockfd);
+    try {
+        func(connfd);
+    } catch (InterruptException &e) {
+        fprintf(stderr, "Terminated by Interrupt %s\n", e.what());
+    }
 
     // close the socket
     close(sockfd);
