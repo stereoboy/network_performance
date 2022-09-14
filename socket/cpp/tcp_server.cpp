@@ -96,26 +96,19 @@ int main()
     else
         printf("server accept the client...\n");
 
-
-    // reference
-    //   * https://stackoverflow.com/questions/9590529/how-should-i-print-server-address
-    //   * http://man7.org/linux/man-pages/man3/inet_ntop.3.html
-    char ip_str[INET_ADDRSTRLEN] = {};
-    const char *p = inet_ntop(AF_INET, &cli.sin_addr.s_addr, ip_str, sizeof(INET_ADDRSTRLEN));
-    if (p != nullptr) {
-        printf("  accepted from (addr=%s, port=%d)\n", ip_str, ntohs(cli.sin_port)) ;
-    } else {
-        fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
-    }
-
     // reference
     //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c
+    //   * http://man7.org/linux/man-pages/man3/inet_ntop.3.html
     struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli;
     struct in_addr ipAddr = pV4Addr->sin_addr;
 
     char str[INET_ADDRSTRLEN];
-    inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
-    printf("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
+    const char *p = inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+    if (p != nullptr) {
+        printf("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
+    } else {
+        fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
+    }
 
 
     // Function for chatting between client and server
