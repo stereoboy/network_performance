@@ -4,7 +4,7 @@ project(socket_samples) #Project name
 
 set(CMAKE_CXX_STANDARD 14) #setting C++ 14 standard
 
-set (CMAKE_CXX_FLAGS "-lstdc++fs -fpermissive")
+set (CMAKE_CXX_FLAGS "-lstdc++fs ")
 
 
 #including GStreamer header files directory
