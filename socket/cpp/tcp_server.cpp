@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #define MAX 80
@@ -49,7 +50,8 @@ void func(int connfd)
 // Driver function
 int main()
 {
-    int sockfd, connfd, len;
+    int sockfd, connfd;
+    socklen_t len;
     struct sockaddr_in servaddr, cli;
    
     // socket create and verification
