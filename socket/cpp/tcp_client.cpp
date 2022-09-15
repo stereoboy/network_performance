@@ -131,6 +131,23 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
     }
 
+    // reference
+    //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
+    struct sockaddr_in addr1;
+    struct sockaddr_in addr2;
+
+    int clnt_sock_err, clnt_peer_err;
+    socklen_t serv_len = sizeof(addr1);
+    clnt_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
+    clnt_sock_err = getsockname(sockfd, (struct sockaddr *)&addr2, &serv_len);
+
+    printf("Client socket's ip : %s\n", inet_ntoa(addr2.sin_addr));
+    printf("client socket's port %d\n", ntohs(addr2.sin_port));
+    printf("Client socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+    printf("Client socket's peer port : %d\n", ntohs(addr1.sin_port));
+
+    printf("%d %d\n", clnt_sock_err, clnt_peer_err);
+
     // function for chat
     try {
         func(connfd);

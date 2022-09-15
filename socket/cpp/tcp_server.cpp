@@ -127,6 +127,43 @@ int main()
         fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
     }
 
+    // reference
+    //  * https://www.joinc.co.kr/w/man/2/getpeername
+    struct sockaddr_in myaddr;
+    len = sizeof(myaddr);
+    getpeername(connfd, (struct sockaddr *)&myaddr, &len);
+    printf("address : %s\n", inet_ntoa(myaddr.sin_addr));
+    printf("Port    : %d\n", ntohs(myaddr.sin_port));
+
+    // reference
+    //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
+    struct sockaddr_in serv_addr;
+    struct sockaddr_in clnt_addr;
+    socklen_t clnt_addr_size = clnt_addr_size=sizeof(clnt_addr);
+
+    struct sockaddr_in addr1;
+    struct sockaddr_in addr2;
+
+    struct sockaddr_in addr3;
+    struct sockaddr_in addr4;
+
+    socklen_t serv_len = sizeof(serv_addr);
+    int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
+    int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
+
+    printf("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+    printf("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
+    printf("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
+    printf("Server socket's port : %d\n", ntohs(addr3.sin_port));
+    printf("\n\n\n\n\n");
+
+    int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
+    int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
+
+    printf("Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
+    printf("client socket's peer port %d\n", ntohs(addr2.sin_port));
+    printf("Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
+    printf("Client socket's port : %d\n", ntohs(addr4.sin_port));
 
     // Function for chatting between client and server
     try {
