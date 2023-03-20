@@ -16,28 +16,42 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <ctype.h>
+#include <chrono>
+#include <thread>
 
-#define MAX 80
+#define MAX 512
 #define PORT 8080
 #define SA struct sockaddr
 void func(int sockfd)
 {
-    char buff[MAX];
+    char buff[MAX] = {'H', 'E', 'L', 'L', 'O', '\n'};
     int n;
+    char count = 0;
     for (;;) {
-        bzero(buff, sizeof(buff));
+        auto b = std::chrono::high_resolution_clock::now();
+        //bzero(buff, sizeof(buff));
         printf("Enter the string : ");
         n = 0;
-        while ((buff[n++] = getchar()) != '\n')
-            ;
+//        while ((buff[n++] = getchar()) != '\n') {
+//            printf("<%c>\n", buff[n-1]);
+//        }
+        buff[MAX-1] = count;
+        count++;
         write(sockfd, buff, sizeof(buff));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         bzero(buff, sizeof(buff));
-        read(sockfd, buff, sizeof(buff));
-        printf("From Server : %s", buff);
+        if (read(sockfd, buff, sizeof(buff)) <= 0) {
+            printf("Server closed\n");
+            break;
+        }
+        printf("From Server : %s(%d)", buff, buff[MAX-1]);
         if ((strncmp(buff, "exit", 4)) == 0) {
             printf("Client Exit...\n");
             break;
         }
+        auto e = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration<double, std::milli>(e - b).count();
+        if (elapsed > 30.0) printf(" - %f mmilliseconds\n", elapsed);
     }
 }
 
@@ -150,7 +164,7 @@ int main(int argc, char *argv[])
 
     // function for chat
     try {
-        func(connfd);
+        func(sockfd);
     } catch (InterruptException &e) {
         fprintf(stderr, "Terminated by Interrupt %s\n", e.what());
     }

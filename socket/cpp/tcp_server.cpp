@@ -17,7 +17,9 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#define MAX 80
+#include <chrono>
+#include <thread>
+#define MAX 1024
 #define PORT 8080
 
 // Function designed for chat between client and server.
@@ -33,12 +35,13 @@ void func(int connfd)
         read(connfd, buff, sizeof(buff));
         // print buffer which contains the client contents
         printf("From client: %s\t To client : ", buff);
-        bzero(buff, MAX);
-        n = 0;
-        // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n')
-            ;
+//        bzero(buff, MAX);
+//        n = 0;
+//        // copy server message in the buffer
+//        while ((buff[n++] = getchar()) != '\n')
+//            ;
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
         write(connfd, buff, sizeof(buff));
 
@@ -65,7 +68,7 @@ void signal_handler(int s)
 // Driver function
 int main()
 {
-    int sockfd, connfd;
+    int sockfd = -1, connfd = -1;
     socklen_t len;
     struct sockaddr_in servaddr, cli;
 
@@ -173,5 +176,6 @@ int main()
     }
 
     // After chatting close the socket
-    close(sockfd);
+    if (connfd > 0) close(connfd);
+    if (sockfd > 0) close(sockfd);
 }
