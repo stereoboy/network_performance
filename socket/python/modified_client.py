@@ -20,8 +20,8 @@ if __name__ == '__main__':
     port = 9090
 
     # connect to the server on local computer
-    #s.connect(('127.0.0.1', port))
-    s.connect(('192.168.0.224', port))
+    s.connect(('127.0.0.1', port))
+    # s.connect(('192.168.0.224', port))
 
     elapsed_time_queue = collections.deque(maxlen=100)
     time_queue0 = collections.deque(maxlen=10)
@@ -32,14 +32,14 @@ if __name__ == '__main__':
     err_cnt = 0
 
     #raw_data = np.zeros((640, 480, 4), dtype=np.uint8).flatten()
-    bmp = cv2.imread('./image.png')
+    bmp = cv2.imread('../../data/image.png')
 
     _, jpg = cv2.imencode('.jpg', bmp, [cv2.IMWRITE_JPEG_QUALITY, 90])
     print("jpg size:{}".format(len(jpg)))
 
     while True:
         if count > 0 and count%100 == 0:
-            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
+            print("\t{} fps".format(1.0/np.mean(elapsed_time_queue)))
         _, jpg = cv2.imencode('.jpg', bmp, [cv2.IMWRITE_JPEG_QUALITY, 90])
         offset = 0
         raw_data = jpg

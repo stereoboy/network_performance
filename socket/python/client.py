@@ -44,10 +44,10 @@ if __name__ == '__main__':
     count = 0
     err_cnt = 0
 
-    img = cv2.imread('../image.png', cv2.IMREAD_UNCHANGED)
+    img = cv2.imread('../../data/image.png', cv2.IMREAD_UNCHANGED)
     while True:
         if count > 0 and count%100 == 0:
-            print("{} fps".format(1.0/np.mean(elapsed_time_queue)))
+            print("\t{} fps".format(1.0/np.mean(elapsed_time_queue)))
 #        raw_data = np.zeros((640, 480, 4), dtype=np.uint8).reshape(-1, 1)
         raw_data = img.flatten()
         raw_data[0] = 25
