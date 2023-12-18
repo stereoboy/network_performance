@@ -9,7 +9,7 @@ import collections
 import queue
 import argparse
 import sys
-import cv2
+# import cv2
 import config
 import logging
 

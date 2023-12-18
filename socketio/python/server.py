@@ -1,7 +1,7 @@
 import eventlet
 import socketio
 import numpy as np
-import cv2
+# import cv2
 import time
 import collections
 import config
