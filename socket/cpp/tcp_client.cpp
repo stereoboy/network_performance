@@ -18,24 +18,49 @@
 #include <ctype.h>
 #include <chrono>
 #include <thread>
+#include <getopt.h>
 
-#define MAX 512
-#define PORT 8080
-#define SA struct sockaddr
+#include <queue>
+#include <vector>
+
+#include "config.hpp"
+
+
+
+static struct option long_options[] = {
+    {"help",                no_argument,        nullptr,  'h' },
+    {"server-hostname",     required_argument,  nullptr,  's' },
+    {"port",                required_argument,  nullptr,  'p' },
+    {nullptr,               0,                  nullptr,  0 },
+};
+
+void print_help(void) {
+    printf("usage: tcp_client [-h] [-H HOST] [-p PORT]\n\n");
+    printf("This is toy tcp client to test comm latency\n\n");
+    printf("options:\n");
+
+    printf("  -h,      --help                  show this help message and exit\n");
+    printf("  -s HOST, --server-hostname HOST  set server hostname\n");
+    printf("  -p PORT, --port            PORT  set server port number\n");
+}
+
 void func(int sockfd)
 {
-    char buff[MAX] = {'H', 'E', 'L', 'L', 'O', '\n'};
+    std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
+
+    char buff[MAX_BUF] = {'H', 'E', 'L', 'L', 'O', '\n'};
     int n;
-    char count = 0;
+    uint64_t count = 0;
+    auto b = std::chrono::high_resolution_clock::now();
     for (;;) {
-        auto b = std::chrono::high_resolution_clock::now();
+        auto b_frame = std::chrono::high_resolution_clock::now();
         //bzero(buff, sizeof(buff));
-        printf("Enter the string : ");
+        //printf("Enter the string : ");
         n = 0;
 //        while ((buff[n++] = getchar()) != '\n') {
 //            printf("<%c>\n", buff[n-1]);
 //        }
-        buff[MAX-1] = count;
+        // buff[MAX-1] = count;
         count++;
         write(sockfd, buff, sizeof(buff));
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -44,14 +69,43 @@ void func(int sockfd)
             printf("Server closed\n");
             break;
         }
-        printf("From Server : %s(%d)", buff, buff[MAX-1]);
+        // printf("From Server : %s(%d)", buff, buff[MAX-1]);
         if ((strncmp(buff, "exit", 4)) == 0) {
             printf("Client Exit...\n");
             break;
         }
+        auto e_frame = std::chrono::high_resolution_clock::now();
+        double elapsed_frame = std::chrono::duration<double, std::milli>(e_frame - b_frame).count();
+
+        if (min_heap.size() < 10) {
+            min_heap.push(elapsed_frame);
+        } else {
+            if (elapsed_frame > min_heap.top()) {
+                min_heap.pop();
+                min_heap.push(elapsed_frame);
+            }
+        }
+
+        if (elapsed_frame > 30.0) printf(" - %f mmilliseconds\n", elapsed_frame);
+
         auto e = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double, std::milli>(e - b).count();
-        if (elapsed > 30.0) printf(" - %f mmilliseconds\n", elapsed);
+        if (elapsed > PERF_MONITOR_INTERVAL) {
+            float fps = 1000.0*count/elapsed;
+            printf("\t>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            printf("\t    fps: %6f hz\telapsed= %9f milliseconds/ %ld\n", fps, elapsed, count);
+            printf("\t    average elapsed time per frame: %3.3f millisecs\n", elapsed/count);
+            printf("\t    [");
+            while (!min_heap.empty()) {
+                printf("%.3f, ", min_heap.top());
+                min_heap.pop();
+            }
+            printf("]\n");
+            printf("\t>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            //reset
+            b = std::chrono::high_resolution_clock::now();
+            count = 0;
+        }
     }
 }
 
@@ -75,32 +129,53 @@ int main(int argc, char *argv[])
     // init signal handler
     std::signal(SIGINT, signal_handler);
 
+    //
     // reference
     //  - https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
-    const char *addr_default = "127.0.0.1";
-    char *addr_value = (char *)addr_default;
+    //  - https://man7.org/linux/man-pages/man3/getopt.3.html
+    //
+    const char *server_hostname_default = "127.0.0.1";
+    char *server_hostname = (char *)server_hostname_default;
+    int port = PORT;
     int c;
     opterr = 0;
 
-    while ((c = getopt (argc, argv, "i:")) != -1)
+    int option_index = 0;
+    while ((c = getopt_long (argc, argv, "hs:p:", long_options, &option_index)) != -1)
         switch (c)
         {
-            case 'i':
-                addr_value = optarg;
+            case 0:
+                printf("option %s", long_options[option_index].name);
+                if (optarg)
+                       printf(" with arg %s", optarg);
+                printf("\n");
+                break;
+            case 'h':
+                print_help();
+                return 0;
+            case 's':
+                server_hostname = optarg;
+                break;
+            case 'p':
+                port = atoi(optarg);
                 break;
             case '?':
-                if (optopt == 'i')
+                if (optopt == 'r')
                     fprintf (stderr, "Option -%c requires an argument.\n", optopt);
                 else if (isprint (optopt))
-                    fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+                    fprintf (stderr, "Unknown option or no argument `-%c'.\n", optopt);
                 else
-                    fprintf (stderr,
-                            "Unknown option character `\\x%x'.\n",
-                            optopt);
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
+                printf("return=%c(%x)\n", c, c);
                 abort ();
         }
+
+    // printf("optind=%d\n", optind);
+
+    printf("\tserver_hostname: %s\n", server_hostname);
+    printf("\tport           : %d\n", port);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -114,11 +189,11 @@ int main(int argc, char *argv[])
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(addr_value);
+    servaddr.sin_addr.s_addr = inet_addr(server_hostname);
     servaddr.sin_port = htons(PORT);
 
     // connect the client socket to server socket
-    if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
         printf("connection with the server failed...\n");
         exit(0);
     }
@@ -160,7 +235,7 @@ int main(int argc, char *argv[])
     printf("Client socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
     printf("Client socket's peer port : %d\n", ntohs(addr1.sin_port));
 
-    printf("%d %d\n", clnt_sock_err, clnt_peer_err);
+    // printf("client socket error=%d peer_error=%d\n", clnt_sock_err, clnt_peer_err);
 
     // function for chat
     try {

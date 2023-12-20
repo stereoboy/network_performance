@@ -19,29 +19,35 @@
 #include <sys/types.h>
 #include <chrono>
 #include <thread>
-#define MAX 1024
-#define PORT 8080
+
+
+#include "config.hpp"
 
 // Function designed for chat between client and server.
 void func(int connfd)
 {
-    char buff[MAX];
+    char buff[MAX_BUF];
     int n;
     // infinite loop for chat
     for (;;) {
-        bzero(buff, MAX);
+        bzero(buff, MAX_BUF);
 
         // read the message from client and copy it in buffer
         read(connfd, buff, sizeof(buff));
         // print buffer which contains the client contents
-        printf("From client: %s\t To client : ", buff);
+        //printf("From client: %s\t To client : ", buff);
 //        bzero(buff, MAX);
 //        n = 0;
 //        // copy server message in the buffer
 //        while ((buff[n++] = getchar()) != '\n')
 //            ;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+        if (strncmp(buff, "HELLO", 5) != 0) {
+            fprintf(stderr, "ERROR: message is broken!\n");
+            exit(-1);
+        }
+
+        //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
         write(connfd, buff, sizeof(buff));
 
@@ -90,6 +96,8 @@ int main()
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
+    int optval = 1;
+     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) {
         printf("socket bind failed...\n");

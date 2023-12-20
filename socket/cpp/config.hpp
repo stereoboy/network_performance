@@ -1,0 +1,3 @@
+#define MAX_BUF 1024
+#define PORT 8080
+#define PERF_MONITOR_INTERVAL 4000
