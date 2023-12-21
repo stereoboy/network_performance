@@ -31,6 +31,7 @@ static struct option long_options[] = {
     {"help",                no_argument,        nullptr,  'h' },
     {"server-hostname",     required_argument,  nullptr,  's' },
     {"port",                required_argument,  nullptr,  'p' },
+    {"buffer-size",         required_argument,  nullptr,  'b' },
     {nullptr,               0,                  nullptr,  0 },
 };
 
@@ -42,6 +43,7 @@ void print_help(void) {
     LOG_INFO("  -h,      --help                  show this help message and exit\n");
     LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
     LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
+    LOG_INFO("  -b SIZE, --buffer-size     SIZE  set message buffer-size\n");
 }
 
 static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
@@ -80,12 +82,14 @@ static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
     }
 }
 
-int func(int sockfd)
+int func(int sockfd, size_t buffer_size)
 {
     int ret = EXIT_SUCCESS;
     std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
 
-    char buff[MAX_BUF] = {'H', 'E', 'L', 'L', 'O', '\n'};
+    char *buff = (char*) std::malloc(buffer_size);
+    std::strncpy(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1);
+
     int n;
     uint64_t count = 0;
     auto b = std::chrono::high_resolution_clock::now();
@@ -105,7 +109,7 @@ int func(int sockfd)
         }
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        bzero(buff, sizeof(buff));
+        std::memset(buff, 0, buffer_size);
 
 
         if (_recv(sockfd, buff, sizeof(buff), 0) <= 0) {
@@ -114,8 +118,8 @@ int func(int sockfd)
             break;
         }
         // LOG_INFO("From Server : %s(%d)", buff, buff[MAX-1]);
-        if ((strncmp(buff, "HELLO", 5)) != 0) {
-            LOG_ERR("ERROR: message is broken!\n");
+        if (strncmp(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1) != 0) {
+            LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
         }
@@ -153,6 +157,8 @@ int func(int sockfd)
             count = 0;
         }
     }
+
+    std::free(buff);
     return ret;
 }
 
@@ -183,12 +189,13 @@ int main(int argc, char *argv[])
     //
     const char *server_hostname_default = "127.0.0.1";
     char *server_hostname = (char *)server_hostname_default;
-    int port = PORT;
+    int port            = PORT;
+    size_t buffer_size  = MAX_BUFFER_SIZE;
     int c;
     opterr = 0;
 
     int option_index = 0;
-    while ((c = getopt_long (argc, argv, "hs:p:", long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:p:b:", long_options, &option_index)) != -1)
         switch (c)
         {
             case 0:
@@ -205,6 +212,9 @@ int main(int argc, char *argv[])
                 break;
             case 'p':
                 port = atoi(optarg);
+                break;
+            case 'b':
+                buffer_size = (size_t)atoi(optarg);
                 break;
             case '?':
                 if (optopt == 'r')
@@ -223,6 +233,7 @@ int main(int argc, char *argv[])
 
     LOG_INFO("\tserver_hostname: %s\n", server_hostname);
     LOG_INFO("\tport           : %d\n", port);
+    LOG_INFO("\tbuffer-size    : %ld\n", buffer_size);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -302,7 +313,7 @@ int main(int argc, char *argv[])
 
     // function for chat
     try {
-        ret = func(sockfd);
+        ret = func(sockfd, buffer_size);
     } catch (InterruptException &e) {
         LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }

@@ -30,6 +30,7 @@ static struct option long_options[] = {
     {"help",                no_argument,        nullptr,  'h' },
     // {"hostname",            required_argument,  nullptr,  's' },
     {"port",                required_argument,  nullptr,  'p' },
+    {"buffer-size",         required_argument,  nullptr,  'b' },
     {nullptr,               0,                  nullptr,  0 },
 };
 
@@ -39,8 +40,9 @@ void print_help(void) {
     LOG_INFO("options:\n");
 
     LOG_INFO("  -h,      --help                  show this help message and exit\n");
-    LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
+    // LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
     LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
+    LOG_INFO("  -b SIZE, --buffer-size     SIZE  set message buffer-size\n");
 }
 
 static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
@@ -80,14 +82,16 @@ static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
 }
 
 // Function designed for chat between client and server.
-int func(int connfd)
+int func(int connfd, size_t buffer_size)
 {
     int ret = EXIT_SUCCESS;
-    char buff[MAX_BUF];
+
+    char *buff = (char*) std::malloc(buffer_size);
+
     int n;
     // infinite loop for chat
     for (;;) {
-        bzero(buff, MAX_BUF);
+        std::memset(buff, 0, buffer_size);
 
         // read the message from client and copy it in buffer
         if (_recv(connfd, buff, sizeof(buff), 0) <= 0) {
@@ -103,8 +107,8 @@ int func(int connfd)
 //        while ((buff[n++] = getchar()) != '\n')
 //            ;
 
-        if (strncmp(buff, "HELLO", 5) != 0) {
-            LOG_ERR("ERROR: message is broken!\n");
+        if (strncmp(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1) != 0) {
+            LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
         }
@@ -122,6 +126,8 @@ int func(int connfd)
             break;
         }
     }
+
+    std::free(buff);
     return ret;
 }
 
@@ -152,12 +158,13 @@ int main(int argc, char *argv[])
     //  - https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
     //  - https://man7.org/linux/man-pages/man3/getopt.3.html
     //
-    int port = PORT;
+    int port            = PORT;
+    size_t buffer_size  = MAX_BUFFER_SIZE;
     int c;
     opterr = 0;
 
     int option_index = 0;
-    while ((c = getopt_long (argc, argv, "hs:p:", long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:p:b:", long_options, &option_index)) != -1)
         switch (c)
         {
             case 0:
@@ -171,6 +178,9 @@ int main(int argc, char *argv[])
                 return 0;
             case 'p':
                 port = atoi(optarg);
+                break;
+            case 'b':
+                buffer_size = (size_t)atoi(optarg);
                 break;
             case '?':
                 if (optopt == 'r')
@@ -186,6 +196,7 @@ int main(int argc, char *argv[])
         }
 
     LOG_INFO("\tport           : %d\n", port);
+    LOG_INFO("\tbuffer-size    : %ld\n", buffer_size);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -304,7 +315,7 @@ int main(int argc, char *argv[])
 
             // Function for chatting between client and server
             {
-                ret = func(connfd);
+                ret = func(connfd, buffer_size);
             }
 
             // close sockets
