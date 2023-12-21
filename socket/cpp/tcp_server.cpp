@@ -47,6 +47,7 @@ void print_help(void) {
 
 static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
     int offset = 0;
+    int count = 0;
     ssize_t target_size = len;
     while(true) {
         ssize_t sent_size = send(sockfd, (void *)((char *)buf + offset), target_size, flags);
@@ -59,12 +60,14 @@ static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
             LOG_ERR("%s(): failed, %s(%d)\n", __FUNCTION__ , strerror(errno), errno);
             return -1;
         }
-        LOG_INFO("%s(): data is fragmented\n", __FUNCTION__);
+        count++;
+        LOG_INFO("%s(): data is fragmented\n (count=%d, remained=%ld bytes)", __FUNCTION__, count, target_size);
     }
 }
 
 static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
     int offset = 0;
+    int count = 0;
     ssize_t target_size = len;
     while(true) {
         ssize_t read_size = recv(sockfd, (void *)((char *)buf + offset), target_size, flags);
@@ -77,7 +80,8 @@ static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
             LOG_ERR("%s(): failed, %s(%d)\n", __FUNCTION__ , strerror(errno), errno);
             return -1;
         }
-        LOG_INFO("%s(): data is fragmented\n", __FUNCTION__);
+        count++;
+        LOG_INFO("%s(): data is fragmented (count=%d, remained=%ld)\n", __FUNCTION__, count, target_size);
     }
 }
 
