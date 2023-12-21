@@ -24,6 +24,42 @@
 #include "logging.hpp"
 #include "config.hpp"
 
+static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
+    int offset = 0;
+    ssize_t target_size = len;
+    while(true) {
+        ssize_t sent_size = send(sockfd, (void *)((char *)buf + offset), target_size, flags);
+        if (sent_size == 0) return 0;
+        else if (sent_size < 0) return -1;
+        offset += sent_size;
+        target_size -= sent_size;
+        if (target_size == 0) return len;
+        else if (target_size < 0) {
+            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            return -1;
+        }
+        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+    }
+}
+
+static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
+    int offset = 0;
+    ssize_t target_size = len;
+    while(true) {
+        ssize_t read_size = recv(sockfd, (void *)((char *)buf + offset), target_size, flags);
+        if (read_size == 0) return 0;
+        else if (read_size < 0) return -1;
+        offset += read_size;
+        target_size -= read_size;
+        if (target_size == 0) return len;
+        else if (target_size < 0) {
+            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            return -1;
+        }
+        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+    }
+}
+
 // Function designed for chat between client and server.
 int func(int connfd)
 {
@@ -35,7 +71,7 @@ int func(int connfd)
         bzero(buff, MAX_BUF);
 
         // read the message from client and copy it in buffer
-        if (recv(connfd, buff, sizeof(buff), 0) <= 0) {
+        if (_recv(connfd, buff, sizeof(buff), 0) <= 0) {
             LOG_ERR("recv failed: %s\n", strerror(errno));
             LOG_INFO("Server closed\n");
             break;
@@ -56,7 +92,7 @@ int func(int connfd)
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
-        if (send(connfd, buff, sizeof(buff), 0) < 0) {
+        if (_send(connfd, buff, sizeof(buff), 0) < 0) {
             LOG_ERR("send failed: %s\n", strerror(errno));
             break;
         }

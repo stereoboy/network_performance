@@ -44,6 +44,42 @@ void print_help(void) {
     LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
 }
 
+static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
+    int offset = 0;
+    ssize_t target_size = len;
+    while(true) {
+        ssize_t sent_size = send(sockfd, (void *)((char *)buf + offset), target_size, flags);
+        if (sent_size == 0) return 0;
+        else if (sent_size < 0) return -1;
+        offset += sent_size;
+        target_size -= sent_size;
+        if (target_size == 0) return len;
+        else if (target_size < 0) {
+            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            return -1;
+        }
+        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+    }
+}
+
+static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
+    int offset = 0;
+    ssize_t target_size = len;
+    while(true) {
+        ssize_t read_size = recv(sockfd, (void *)((char *)buf + offset), target_size, flags);
+        if (read_size == 0) return 0;
+        else if (read_size < 0) return -1;
+        offset += read_size;
+        target_size -= read_size;
+        if (target_size == 0) return len;
+        else if (target_size < 0) {
+            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            return -1;
+        }
+        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+    }
+}
+
 int func(int sockfd)
 {
     int ret = EXIT_SUCCESS;
@@ -63,7 +99,7 @@ int func(int sockfd)
 //        }
         // buff[MAX-1] = count;
         count++;
-        if (send(sockfd, buff, sizeof(buff), 0) < 0) {
+        if (_send(sockfd, buff, sizeof(buff), 0) < 0) {
             LOG_ERR("send failed: %s\n", strerror(errno));
             break;
         }
@@ -72,7 +108,7 @@ int func(int sockfd)
         bzero(buff, sizeof(buff));
 
 
-        if (recv(sockfd, buff, sizeof(buff), 0) <= 0) {
+        if (_recv(sockfd, buff, sizeof(buff), 0) <= 0) {
             LOG_ERR("recv failed: %s\n", strerror(errno));
             LOG_INFO("Client exit...\n");
             break;
