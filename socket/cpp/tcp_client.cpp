@@ -88,7 +88,8 @@ int func(int sockfd, size_t buffer_size)
     std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
 
     char *buff = (char*) std::malloc(buffer_size);
-    std::strncpy(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1);
+    std::strncpy(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1);
+    std::strncpy(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1 , MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1);
 
     int n;
     uint64_t count = 0;
@@ -103,7 +104,7 @@ int func(int sockfd, size_t buffer_size)
 //        }
         // buff[MAX-1] = count;
         count++;
-        if (_send(sockfd, buff, sizeof(buff), 0) < 0) {
+        if (_send(sockfd, buff, buffer_size, 0) < 0) {
             LOG_ERR("_send failed: %s\n", strerror(errno));
             break;
         }
@@ -112,13 +113,19 @@ int func(int sockfd, size_t buffer_size)
         std::memset(buff, 0, buffer_size);
 
 
-        if (_recv(sockfd, buff, sizeof(buff), 0) <= 0) {
+        if (_recv(sockfd, buff, buffer_size, 0) <= 0) {
             LOG_ERR("_recv failed: %s\n", strerror(errno));
             LOG_INFO("Client exit...\n");
             break;
         }
         // LOG_INFO("From Server : %s(%d)", buff, buff[MAX-1]);
-        if (strncmp(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1) != 0) {
+        if (strncmp(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1) != 0) {
+            LOG_ERR("message is broken!\n");
+            ret = EXIT_FAILURE;
+            break;
+        }
+
+        if (strncmp(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1, MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1) != 0) {
             LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
@@ -234,6 +241,11 @@ int main(int argc, char *argv[])
     LOG_INFO("\tserver_hostname: %s\n", server_hostname);
     LOG_INFO("\tport           : %d\n", port);
     LOG_INFO("\tbuffer-size    : %ld\n", buffer_size);
+
+    if (buffer_size < 64) {
+        LOG_INFO("buffer-size is too\n");
+        std::exit(EXIT_FAILURE);
+    }
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);

@@ -94,7 +94,7 @@ int func(int connfd, size_t buffer_size)
         std::memset(buff, 0, buffer_size);
 
         // read the message from client and copy it in buffer
-        if (_recv(connfd, buff, sizeof(buff), 0) <= 0) {
+        if (_recv(connfd, buff, buffer_size, 0) <= 0) {
             LOG_ERR("_recv failed: %s(%d)\n", strerror(errno), errno);
             LOG_INFO("Server closed\n");
             break;
@@ -107,7 +107,13 @@ int func(int connfd, size_t buffer_size)
 //        while ((buff[n++] = getchar()) != '\n')
 //            ;
 
-        if (strncmp(buff, MESSAGE_STRING, sizeof(MESSAGE_STRING) - 1) != 0) {
+        if (strncmp(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1) != 0) {
+            LOG_ERR("message is broken!\n");
+            ret = EXIT_FAILURE;
+            break;
+        }
+
+        if (strncmp(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1, MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1) != 0) {
             LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
@@ -115,7 +121,7 @@ int func(int connfd, size_t buffer_size)
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
-        if (_send(connfd, buff, sizeof(buff), 0) < 0) {
+        if (_send(connfd, buff, buffer_size, 0) < 0) {
             LOG_ERR("_send failed: %s(%d)\n", strerror(errno), errno);
             break;
         }
@@ -197,6 +203,11 @@ int main(int argc, char *argv[])
 
     LOG_INFO("\tport           : %d\n", port);
     LOG_INFO("\tbuffer-size    : %ld\n", buffer_size);
+
+    if (buffer_size < 64) {
+        LOG_INFO("buffer-size is too small\n");
+        std::exit(EXIT_FAILURE);
+    }
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
