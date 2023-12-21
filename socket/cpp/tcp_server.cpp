@@ -56,10 +56,10 @@ static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
         target_size -= sent_size;
         if (target_size == 0) return len;
         else if (target_size < 0) {
-            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            LOG_ERR("%s(): failed, %s(%d)\n", __FUNCTION__ , strerror(errno), errno);
             return -1;
         }
-        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+        LOG_INFO("%s(): data is fragmented\n", __FUNCTION__);
     }
 }
 
@@ -74,10 +74,10 @@ static ssize_t _recv(int sockfd, void *buf, size_t len, int flags) {
         target_size -= read_size;
         if (target_size == 0) return len;
         else if (target_size < 0) {
-            LOG_ERR("%s: failed, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+            LOG_ERR("%s(): failed, %s(%d)\n", __FUNCTION__ , strerror(errno), errno);
             return -1;
         }
-        LOG_INFO("%s: data is fragmented, %s(%d)\n", __PRETTY_FUNCTION__ , strerror(errno), errno);
+        LOG_INFO("%s(): data is fragmented\n", __FUNCTION__);
     }
 }
 
