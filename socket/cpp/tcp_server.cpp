@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <chrono>
 #include <thread>
+#include <netinet/tcp.h>
 
 #include "logging.hpp"
 #include "config.hpp"
@@ -142,6 +143,13 @@ int main()
     }
     else
         LOG_INFO("server accept the client...\n");
+
+    if (setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0) {
+        LOG_ERR("setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) failed: %s\n", strerror(errno));
+        close(sockfd);
+        close(connfd);
+        std::exit(EXIT_FAILURE);
+    }
 
     // reference
     //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c

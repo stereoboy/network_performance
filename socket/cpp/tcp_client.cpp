@@ -19,6 +19,7 @@
 #include <chrono>
 #include <thread>
 #include <getopt.h>
+#include <netinet/tcp.h>
 
 #include <queue>
 #include <vector>
@@ -197,6 +198,18 @@ int main(int argc, char *argv[])
         LOG_INFO("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
 
+    int one = 1, zero = 0;
+    if (setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0) {
+        LOG_ERR("setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) failed: %s\n", strerror(errno));
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
+    }
+
+    // if (setsockopt(sockfd, SOL_TCP, TCP_CORK, &zero, sizeof(zero)) < 0) {
+    //     LOG_ERR("setsockopt(sockfd, SOL_TCP, TCP_CORK, &zero, sizeof(zero)) failed: %s\n", strerror(errno));
+    //     close(sockfd);
+    //     std::exit(EXIT_FAILURE);
+    // }
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
