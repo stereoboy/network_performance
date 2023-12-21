@@ -291,7 +291,8 @@ int main(int argc, char *argv[])
             LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
             LOG_INFO("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
             LOG_INFO("Server socket's port : %d\n", ntohs(addr3.sin_port));
-            LOG_INFO("\n\n");
+            LOG_INFO("\n");
+            LOG_INFO("\n");
 
             int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
             int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
@@ -308,6 +309,7 @@ int main(int argc, char *argv[])
 
             // close sockets
             if (connfd > 0) close(connfd);
+            connfd = -1;
         }
     } catch (InterruptException &e) {
         LOG_ERR("Terminated by Interrupt %s\n", e.what());

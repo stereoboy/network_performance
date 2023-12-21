@@ -252,9 +252,12 @@ int main(int argc, char *argv[])
     servaddr.sin_addr.s_addr = inet_addr(server_hostname);
     servaddr.sin_port = htons(port);
 
+    int ret = EXIT_SUCCESS;
+
     // connect the client socket to server socket
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
         LOG_INFO("connection with the server failed...\n");
+        close(sockfd);
         std::exit(EXIT_FAILURE);
     }
     else
@@ -299,7 +302,7 @@ int main(int argc, char *argv[])
 
     // function for chat
     try {
-        func(sockfd);
+        ret = func(sockfd);
     } catch (InterruptException &e) {
         LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }
@@ -307,5 +310,5 @@ int main(int argc, char *argv[])
     // close the socket
     close(sockfd);
 
-    return EXIT_SUCCESS;
+    return ret;
 }
