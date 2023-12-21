@@ -20,12 +20,13 @@
 #include <chrono>
 #include <thread>
 
-
+#include "logging.hpp"
 #include "config.hpp"
 
 // Function designed for chat between client and server.
-void func(int connfd)
+int func(int connfd)
 {
+    int ret = EXIT_SUCCESS;
     char buff[MAX_BUF];
     int n;
     // infinite loop for chat
@@ -33,9 +34,13 @@ void func(int connfd)
         bzero(buff, MAX_BUF);
 
         // read the message from client and copy it in buffer
-        read(connfd, buff, sizeof(buff));
+        if (recv(connfd, buff, sizeof(buff), 0) <= 0) {
+            LOG_ERR("recv failed: %s\n", strerror(errno));
+            LOG_INFO("Server closed\n");
+            break;
+        }
         // print buffer which contains the client contents
-        //printf("From client: %s\t To client : ", buff);
+        //LOG_INFO("From client: %s\t To client : ", buff);
 //        bzero(buff, MAX);
 //        n = 0;
 //        // copy server message in the buffer
@@ -43,20 +48,26 @@ void func(int connfd)
 //            ;
 
         if (strncmp(buff, "HELLO", 5) != 0) {
-            fprintf(stderr, "ERROR: message is broken!\n");
-            exit(-1);
+            LOG_ERR("ERROR: message is broken!\n");
+            ret = EXIT_FAILURE;
+            break;
         }
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
-        write(connfd, buff, sizeof(buff));
+        if (send(connfd, buff, sizeof(buff), 0) < 0) {
+            LOG_ERR("send failed: %s\n", strerror(errno));
+            break;
+        }
+
 
         // if msg contains "Exit" then server exit and chat ended.
         if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
+            LOG_INFO("Server Exit...\n");
             break;
         }
     }
+    return ret;
 }
 
 class InterruptException : public std::exception
@@ -84,11 +95,11 @@ int main()
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        printf("socket creation failed...\n");
-        exit(0);
+        LOG_INFO("socket creation failed...\n");
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("Socket successfully created..\n");
+        LOG_INFO("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
 
     // assign IP, PORT
@@ -96,33 +107,41 @@ int main()
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
 
-    int optval = 1;
-     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    int one = 1, zero = 0;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {
+        LOG_ERR("setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) failed: %s\n", strerror(errno));
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
+    }
+
     // Binding newly created socket to given IP and verification
     if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) {
-        printf("socket bind failed...\n");
-        exit(0);
+        LOG_INFO("socket bind failed...\n");
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("Socket successfully binded..\n");
+        LOG_INFO("Socket successfully binded..\n");
 
     // Now server is ready to listen and verification
     if ((listen(sockfd, 5)) != 0) {
-        printf("Listen failed...\n");
-        exit(0);
+        LOG_INFO("Listen failed...\n");
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("Server listening..\n");
+        LOG_INFO("Server listening..\n");
     len = sizeof(cli);
 
     // Accept the data packet from client and verification
     connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
     if (connfd < 0) {
-        printf("server accept failed...\n");
-        exit(0);
+        LOG_INFO("server accept failed...\n");
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("server accept the client...\n");
+        LOG_INFO("server accept the client...\n");
 
     // reference
     //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c
@@ -133,9 +152,9 @@ int main()
     char str[INET_ADDRSTRLEN];
     const char *p = inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
     if (p != nullptr) {
-        printf("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
+        LOG_INFO("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
     } else {
-        fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
+        LOG_ERR("Error number: %s(%d)\n", strerror(errno), errno);
     }
 
     // reference
@@ -143,8 +162,8 @@ int main()
     struct sockaddr_in myaddr;
     len = sizeof(myaddr);
     getpeername(connfd, (struct sockaddr *)&myaddr, &len);
-    printf("address : %s\n", inet_ntoa(myaddr.sin_addr));
-    printf("Port    : %d\n", ntohs(myaddr.sin_port));
+    LOG_INFO("address : %s\n", inet_ntoa(myaddr.sin_addr));
+    LOG_INFO("Port    : %d\n", ntohs(myaddr.sin_port));
 
     // reference
     //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
@@ -162,28 +181,31 @@ int main()
     int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
     int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
 
-    printf("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
-    printf("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
-    printf("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
-    printf("Server socket's port : %d\n", ntohs(addr3.sin_port));
-    printf("\n\n\n\n\n");
+    LOG_INFO("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+    LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
+    LOG_INFO("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
+    LOG_INFO("Server socket's port : %d\n", ntohs(addr3.sin_port));
+    LOG_INFO("\n\n\n\n\n");
 
     int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
     int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
 
-    printf("Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
-    printf("client socket's peer port %d\n", ntohs(addr2.sin_port));
-    printf("Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
-    printf("Client socket's port : %d\n", ntohs(addr4.sin_port));
+    LOG_INFO("Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
+    LOG_INFO("client socket's peer port %d\n", ntohs(addr2.sin_port));
+    LOG_INFO("Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
+    LOG_INFO("Client socket's port : %d\n", ntohs(addr4.sin_port));
 
+    int ret = EXIT_SUCCESS;
     // Function for chatting between client and server
     try {
-        func(connfd);
+        ret = func(connfd);
     } catch (InterruptException &e) {
-        fprintf(stderr, "Terminated by Interrupt %s\n", e.what());
+        LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }
 
     // After chatting close the socket
     if (connfd > 0) close(connfd);
     if (sockfd > 0) close(sockfd);
+
+    return ret;
 }

@@ -1,3 +1,8 @@
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
+
 #define MAX_BUF 1024
 #define PORT 8080
 #define PERF_MONITOR_INTERVAL 4000
+
+#endif // CONFIG_HPP

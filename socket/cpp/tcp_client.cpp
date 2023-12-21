@@ -23,9 +23,8 @@
 #include <queue>
 #include <vector>
 
+#include "logging.hpp"
 #include "config.hpp"
-
-
 
 static struct option long_options[] = {
     {"help",                no_argument,        nullptr,  'h' },
@@ -35,17 +34,18 @@ static struct option long_options[] = {
 };
 
 void print_help(void) {
-    printf("usage: tcp_client [-h] [-H HOST] [-p PORT]\n\n");
-    printf("This is toy tcp client to test comm latency\n\n");
-    printf("options:\n");
+    LOG_INFO("usage: tcp_client [-h] [-H HOST] [-p PORT]\n\n");
+    LOG_INFO("This is toy tcp client to test comm latency\n\n");
+    LOG_INFO("options:\n");
 
-    printf("  -h,      --help                  show this help message and exit\n");
-    printf("  -s HOST, --server-hostname HOST  set server hostname\n");
-    printf("  -p PORT, --port            PORT  set server port number\n");
+    LOG_INFO("  -h,      --help                  show this help message and exit\n");
+    LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
+    LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
 }
 
-void func(int sockfd)
+int func(int sockfd)
 {
+    int ret = EXIT_SUCCESS;
     std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
 
     char buff[MAX_BUF] = {'H', 'E', 'L', 'L', 'O', '\n'};
@@ -55,25 +55,34 @@ void func(int sockfd)
     for (;;) {
         auto b_frame = std::chrono::high_resolution_clock::now();
         //bzero(buff, sizeof(buff));
-        //printf("Enter the string : ");
+        //LOG_INFO("Enter the string : ");
         n = 0;
 //        while ((buff[n++] = getchar()) != '\n') {
-//            printf("<%c>\n", buff[n-1]);
+//            LOG_INFO("<%c>\n", buff[n-1]);
 //        }
         // buff[MAX-1] = count;
         count++;
-        write(sockfd, buff, sizeof(buff));
+        if (send(sockfd, buff, sizeof(buff), 0) < 0) {
+            LOG_ERR("send failed: %s\n", strerror(errno));
+            break;
+        }
+
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         bzero(buff, sizeof(buff));
-        if (read(sockfd, buff, sizeof(buff)) <= 0) {
-            printf("Server closed\n");
+
+
+        if (recv(sockfd, buff, sizeof(buff), 0) <= 0) {
+            LOG_ERR("recv failed: %s\n", strerror(errno));
+            LOG_INFO("Client exit...\n");
             break;
         }
-        // printf("From Server : %s(%d)", buff, buff[MAX-1]);
-        if ((strncmp(buff, "exit", 4)) == 0) {
-            printf("Client Exit...\n");
+        // LOG_INFO("From Server : %s(%d)", buff, buff[MAX-1]);
+        if ((strncmp(buff, "HELLO", 5)) != 0) {
+            LOG_ERR("ERROR: message is broken!\n");
+            ret = EXIT_FAILURE;
             break;
         }
+
         auto e_frame = std::chrono::high_resolution_clock::now();
         double elapsed_frame = std::chrono::duration<double, std::milli>(e_frame - b_frame).count();
 
@@ -86,27 +95,28 @@ void func(int sockfd)
             }
         }
 
-        if (elapsed_frame > 30.0) printf(" - %f mmilliseconds\n", elapsed_frame);
+        // if (elapsed_frame > 30.0) LOG_INFO(" - %f milliseconds\n", elapsed_frame);
 
         auto e = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double, std::milli>(e - b).count();
         if (elapsed > PERF_MONITOR_INTERVAL) {
             float fps = 1000.0*count/elapsed;
-            printf("\t>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-            printf("\t    fps: %6f hz\telapsed= %9f milliseconds/ %ld\n", fps, elapsed, count);
-            printf("\t    average elapsed time per frame: %3.3f millisecs\n", elapsed/count);
-            printf("\t    [");
+            LOG_INFO("\t--------------------------------------------------------------------------------\n");
+            LOG_INFO("\t    fps: %6f hz\telapsed= %9f milliseconds/ %ld\n", fps, elapsed, count);
+            LOG_INFO("\t    average elapsed time per frame: %3.3f millisecs\n", elapsed/count);
+            LOG_INFO("\t    [");
             while (!min_heap.empty()) {
-                printf("%.3f, ", min_heap.top());
+                std::printf("%.3f, ", min_heap.top());
                 min_heap.pop();
             }
-            printf("]\n");
-            printf("\t>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+            std::printf("]\n");
+            LOG_INFO("\t--------------------------------------------------------------------------------\n");
             //reset
             b = std::chrono::high_resolution_clock::now();
             count = 0;
         }
     }
+    return ret;
 }
 
 class InterruptException : public std::exception
@@ -145,10 +155,10 @@ int main(int argc, char *argv[])
         switch (c)
         {
             case 0:
-                printf("option %s", long_options[option_index].name);
+                LOG_INFO("option %s", long_options[option_index].name);
                 if (optarg)
-                       printf(" with arg %s", optarg);
-                printf("\n");
+                       LOG_INFO(" with arg %s", optarg);
+                LOG_INFO("\n");
                 break;
             case 'h':
                 print_help();
@@ -168,24 +178,25 @@ int main(int argc, char *argv[])
                     fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
-                printf("return=%c(%x)\n", c, c);
+                LOG_INFO("return=%c(%x)\n", c, c);
                 abort ();
         }
 
-    // printf("optind=%d\n", optind);
+    // LOG_INFO("optind=%d\n", optind);
 
-    printf("\tserver_hostname: %s\n", server_hostname);
-    printf("\tport           : %d\n", port);
+    LOG_INFO("\tserver_hostname: %s\n", server_hostname);
+    LOG_INFO("\tport           : %d\n", port);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        printf("socket creation failed...\n");
-        exit(0);
+        LOG_INFO("socket creation failed...\n");
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("Socket successfully created..\n");
+        LOG_INFO("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
+
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
@@ -194,17 +205,17 @@ int main(int argc, char *argv[])
 
     // connect the client socket to server socket
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
-        printf("connection with the server failed...\n");
-        exit(0);
+        LOG_INFO("connection with the server failed...\n");
+        std::exit(EXIT_FAILURE);
     }
     else
-        printf("connected to the server..\n");
+        LOG_INFO("connected to the server..\n");
 
     //get host name
     char hostname[16];
     memset(hostname, 0x0, sizeof(hostname));
     gethostname(hostname, sizeof(hostname));
-    printf("Device Name (=hostname): %s\n", hostname);
+    LOG_INFO("Device Name (=hostname): %s\n", hostname);
 
     // reference
     //  - https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
@@ -215,9 +226,9 @@ int main(int argc, char *argv[])
     char buffer[INET_ADDRSTRLEN];
     const char* p = inet_ntop(AF_INET, &name.sin_addr, buffer, INET_ADDRSTRLEN);
     if(p != nullptr) {
-        printf("Local IP address is: %s\n", buffer);
+        LOG_INFO("Local IP address is: %s\n", buffer);
     } else {
-        fprintf(stderr, "Error number: %s(%d)\n", strerror(errno), errno);
+        LOG_ERR("Error number: %s(%d)\n", strerror(errno), errno);
     }
 
     // reference
@@ -230,21 +241,23 @@ int main(int argc, char *argv[])
     clnt_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
     clnt_sock_err = getsockname(sockfd, (struct sockaddr *)&addr2, &serv_len);
 
-    printf("Client socket's ip : %s\n", inet_ntoa(addr2.sin_addr));
-    printf("client socket's port %d\n", ntohs(addr2.sin_port));
-    printf("Client socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
-    printf("Client socket's peer port : %d\n", ntohs(addr1.sin_port));
+    LOG_INFO("Client socket's ip : %s\n", inet_ntoa(addr2.sin_addr));
+    LOG_INFO("client socket's port %d\n", ntohs(addr2.sin_port));
+    LOG_INFO("Client socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+    LOG_INFO("Client socket's peer port : %d\n", ntohs(addr1.sin_port));
 
-    // printf("client socket error=%d peer_error=%d\n", clnt_sock_err, clnt_peer_err);
+    // LOG_INFO("client socket error=%d peer_error=%d\n", clnt_sock_err, clnt_peer_err);
 
     // function for chat
     try {
         func(sockfd);
     } catch (InterruptException &e) {
-        fprintf(stderr, "Terminated by Interrupt %s\n", e.what());
+        LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }
 
     // close the socket
     close(sockfd);
+
+    return EXIT_SUCCESS;
 }
 
