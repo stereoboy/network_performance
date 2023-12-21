@@ -91,7 +91,7 @@ int func(int connfd)
 
         // read the message from client and copy it in buffer
         if (_recv(connfd, buff, sizeof(buff), 0) <= 0) {
-            LOG_ERR("recv failed: %s\n", strerror(errno));
+            LOG_ERR("_recv failed: %s(%d)\n", strerror(errno), errno);
             LOG_INFO("Server closed\n");
             break;
         }
@@ -112,10 +112,9 @@ int func(int connfd)
         //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
         if (_send(connfd, buff, sizeof(buff), 0) < 0) {
-            LOG_ERR("send failed: %s\n", strerror(errno));
+            LOG_ERR("_send failed: %s(%d)\n", strerror(errno), errno);
             break;
         }
-
 
         // if msg contains "Exit" then server exit and chat ended.
         if (strncmp("exit", buff, 4) == 0) {

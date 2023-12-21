@@ -100,7 +100,7 @@ int func(int sockfd)
         // buff[MAX-1] = count;
         count++;
         if (_send(sockfd, buff, sizeof(buff), 0) < 0) {
-            LOG_ERR("send failed: %s\n", strerror(errno));
+            LOG_ERR("_send failed: %s\n", strerror(errno));
             break;
         }
 
@@ -109,7 +109,7 @@ int func(int sockfd)
 
 
         if (_recv(sockfd, buff, sizeof(buff), 0) <= 0) {
-            LOG_ERR("recv failed: %s\n", strerror(errno));
+            LOG_ERR("_recv failed: %s\n", strerror(errno));
             LOG_INFO("Client exit...\n");
             break;
         }
