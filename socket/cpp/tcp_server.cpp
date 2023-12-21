@@ -229,84 +229,92 @@ int main(int argc, char *argv[])
         LOG_INFO("Server listening..\n");
     len = sizeof(cli);
 
-    // Accept the data packet from client and verification
-    connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
-    if (connfd < 0) {
-        LOG_INFO("server accept failed...\n");
-        close(sockfd);
-        std::exit(EXIT_FAILURE);
-    }
-    else
-        LOG_INFO("server accept the client...\n");
-
-    if (setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0) {
-        LOG_ERR("setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) failed: %s\n", strerror(errno));
-        close(sockfd);
-        close(connfd);
-        std::exit(EXIT_FAILURE);
-    }
-
-    // reference
-    //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c
-    //   * http://man7.org/linux/man-pages/man3/inet_ntop.3.html
-    struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli;
-    struct in_addr ipAddr = pV4Addr->sin_addr;
-
-    char str[INET_ADDRSTRLEN];
-    const char *p = inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
-    if (p != nullptr) {
-        LOG_INFO("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
-    } else {
-        LOG_ERR("Error number: %s(%d)\n", strerror(errno), errno);
-    }
-
-    // reference
-    //  * https://www.joinc.co.kr/w/man/2/getpeername
-    struct sockaddr_in myaddr;
-    len = sizeof(myaddr);
-    getpeername(connfd, (struct sockaddr *)&myaddr, &len);
-    LOG_INFO("address : %s\n", inet_ntoa(myaddr.sin_addr));
-    LOG_INFO("Port    : %d\n", ntohs(myaddr.sin_port));
-
-    // reference
-    //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
-    struct sockaddr_in serv_addr;
-    struct sockaddr_in clnt_addr;
-    socklen_t clnt_addr_size = clnt_addr_size=sizeof(clnt_addr);
-
-    struct sockaddr_in addr1;
-    struct sockaddr_in addr2;
-
-    struct sockaddr_in addr3;
-    struct sockaddr_in addr4;
-
-    socklen_t serv_len = sizeof(serv_addr);
-    int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
-    int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
-
-    LOG_INFO("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
-    LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
-    LOG_INFO("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
-    LOG_INFO("Server socket's port : %d\n", ntohs(addr3.sin_port));
-    LOG_INFO("\n\n\n\n\n");
-
-    int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
-    int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
-
-    LOG_INFO("Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
-    LOG_INFO("client socket's peer port %d\n", ntohs(addr2.sin_port));
-    LOG_INFO("Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
-    LOG_INFO("Client socket's port : %d\n", ntohs(addr4.sin_port));
-
     int ret = EXIT_SUCCESS;
-    // Function for chatting between client and server
     try {
-        ret = func(connfd);
+        while(true) {
+            // Accept the data packet from client and verification
+            connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
+            if (connfd < 0) {
+                LOG_INFO("server accept failed...\n");
+                close(sockfd);
+                std::exit(EXIT_FAILURE);
+            }
+            else
+                LOG_INFO("server accept the client...\n");
+
+            if (setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0) {
+                LOG_ERR("setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) failed: %s\n", strerror(errno));
+                close(sockfd);
+                close(connfd);
+                std::exit(EXIT_FAILURE);
+            }
+
+            // reference
+            //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c
+            //   * http://man7.org/linux/man-pages/man3/inet_ntop.3.html
+            struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli;
+            struct in_addr ipAddr = pV4Addr->sin_addr;
+
+            char str[INET_ADDRSTRLEN];
+            const char *p = inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+            if (p != nullptr) {
+                LOG_INFO("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
+            } else {
+                LOG_ERR("Error number: %s(%d)\n", strerror(errno), errno);
+            }
+
+            LOG_INFO("############################################################################################\n");
+            // reference
+            //  * https://www.joinc.co.kr/w/man/2/getpeername
+            struct sockaddr_in myaddr;
+            len = sizeof(myaddr);
+            getpeername(connfd, (struct sockaddr *)&myaddr, &len);
+            LOG_INFO("address : %s\n", inet_ntoa(myaddr.sin_addr));
+            LOG_INFO("Port    : %d\n", ntohs(myaddr.sin_port));
+
+            // reference
+            //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
+            struct sockaddr_in serv_addr;
+            struct sockaddr_in clnt_addr;
+            socklen_t clnt_addr_size = clnt_addr_size=sizeof(clnt_addr);
+
+            struct sockaddr_in addr1;
+            struct sockaddr_in addr2;
+
+            struct sockaddr_in addr3;
+            struct sockaddr_in addr4;
+
+            socklen_t serv_len = sizeof(serv_addr);
+            int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
+            int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
+
+            LOG_INFO("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+            LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
+            LOG_INFO("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
+            LOG_INFO("Server socket's port : %d\n", ntohs(addr3.sin_port));
+            LOG_INFO("\n\n");
+
+            int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
+            int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
+
+            LOG_INFO("   Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
+            LOG_INFO("   client socket's peer port %d\n", ntohs(addr2.sin_port));
+            LOG_INFO("   Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
+            LOG_INFO("   Client socket's port : %d\n", ntohs(addr4.sin_port));
+
+            // Function for chatting between client and server
+            {
+                ret = func(connfd);
+            }
+
+            // close sockets
+            if (connfd > 0) close(connfd);
+        }
     } catch (InterruptException &e) {
         LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }
 
-    // After chatting close the socket
+    // close sockets
     if (connfd > 0) close(connfd);
     if (sockfd > 0) close(sockfd);
 
