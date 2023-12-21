@@ -6,10 +6,10 @@
  */
 
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 #include <csignal>
 #include <exception>
 #include <arpa/inet.h>

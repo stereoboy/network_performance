@@ -5,12 +5,12 @@
  *
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 #include <csignal>
 #include <exception>
 #include <arpa/inet.h>
