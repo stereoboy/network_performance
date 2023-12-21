@@ -17,12 +17,31 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <cctype>
 #include <chrono>
 #include <thread>
+#include <getopt.h>
 #include <netinet/tcp.h>
 
 #include "logging.hpp"
 #include "config.hpp"
+
+static struct option long_options[] = {
+    {"help",                no_argument,        nullptr,  'h' },
+    // {"hostname",            required_argument,  nullptr,  's' },
+    {"port",                required_argument,  nullptr,  'p' },
+    {nullptr,               0,                  nullptr,  0 },
+};
+
+void print_help(void) {
+    LOG_INFO("usage: tcp_client [-h] [-H HOST] [-p PORT]\n\n");
+    LOG_INFO("This is toy tcp client to test comm latency\n\n");
+    LOG_INFO("options:\n");
+
+    LOG_INFO("  -h,      --help                  show this help message and exit\n");
+    LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
+    LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
+}
 
 static ssize_t _send(int sockfd, const void *buf, size_t len, int flags) {
     int offset = 0;
@@ -120,7 +139,7 @@ void signal_handler(int s)
 }
 
 // Driver function
-int main()
+int main(int argc, char *argv[])
 {
     int sockfd = -1, connfd = -1;
     socklen_t len;
@@ -128,6 +147,46 @@ int main()
 
     // init signal handler
     std::signal(SIGINT, signal_handler);
+
+    //
+    // reference
+    //  - https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
+    //  - https://man7.org/linux/man-pages/man3/getopt.3.html
+    //
+    int port = PORT;
+    int c;
+    opterr = 0;
+
+    int option_index = 0;
+    while ((c = getopt_long (argc, argv, "hs:p:", long_options, &option_index)) != -1)
+        switch (c)
+        {
+            case 0:
+                LOG_INFO("option %s", long_options[option_index].name);
+                if (optarg)
+                       LOG_INFO(" with arg %s", optarg);
+                LOG_INFO("\n");
+                break;
+            case 'h':
+                print_help();
+                return 0;
+            case 'p':
+                port = atoi(optarg);
+                break;
+            case '?':
+                if (optopt == 'r')
+                    fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+                else if (std::isprint (optopt))
+                    fprintf (stderr, "Unknown option or no argument `-%c'.\n", optopt);
+                else
+                    fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+                return 1;
+            default:
+                LOG_INFO("return=%c(%x)\n", c, c);
+                abort ();
+        }
+
+    LOG_INFO("\tport           : %d\n", port);
 
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -142,7 +201,7 @@ int main()
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
 
     int one = 1, zero = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {

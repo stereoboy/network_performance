@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <ctype.h>
+#include <cctype>
 #include <chrono>
 #include <thread>
 #include <getopt.h>
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
             case '?':
                 if (optopt == 'r')
                     fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-                else if (isprint (optopt))
+                else if (std::isprint (optopt))
                     fprintf (stderr, "Unknown option or no argument `-%c'.\n", optopt);
                 else
                     fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(server_hostname);
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(port);
 
     // connect the client socket to server socket
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
@@ -309,4 +309,3 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
