@@ -5,25 +5,59 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+message("TEST")
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(rcutils)
+find_package(std_msgs REQUIRED)
 
-add_executable(talker_cpp src/talker_cpp.cpp)
-target_include_directories(talker_cpp PUBLIC
+include_directories(include)
+
+#
+# references
+#  - https://github.com/ros2/demos/blob/galactic/action_tutorials/action_tutorials_cpp/CMakeLists.txt
+#
+
+#add_executable(talker_cpp src/talker_cpp.cpp)
+add_library(talker_cpp_library SHARED src/talker_cpp.cpp)
+target_compile_definitions(talker_cpp_library PRIVATE NETPERF_CPP_BUILDING_DLL)
+ament_target_dependencies(talker_cpp_library
+    rclcpp
+    rcutils
+    std_msgs)
+target_include_directories(talker_cpp_library PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(talker_cpp PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(talker_cpp_library PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+rclcpp_components_register_node(talker_cpp_library
+  PLUGIN "netperf_cpp::Talker"
+  EXECUTABLE talker_cpp)
 
-add_executable(listen_cpp src/listen_cpp.cpp)
-target_include_directories(listen_cpp PUBLIC
+#add_executable(listener_cpp src/listener_cpp.cpp)
+add_library(listener_cpp_library SHARED src/listener_cpp.cpp)
+target_compile_definitions(listener_cpp_library PRIVATE NETPERF_CPP_BUILDING_DLL)
+ament_target_dependencies(listener_cpp_library
+    rclcpp
+    rcutils
+    std_msgs)
+target_include_directories(listener_cpp_library PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(listen_cpp PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(listener_cpp_library PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+rclcpp_components_register_node(listener_cpp_library
+  PLUGIN "netperf_cpp::Listener"
+  EXECUTABLE listener_cpp)
 
-install(TARGETS talker_cpp listen_cpp
+install(TARGETS
+	talker_cpp_library
+	listener_cpp_library
+  DESTINATION lib)
+
+install(TARGETS
+	talker_cpp
+	listener_cpp
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
