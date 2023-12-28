@@ -92,10 +92,10 @@ int func(int connfd, size_t buffer_size)
 
     char *buff = (char*) std::malloc(buffer_size);
 
-    int n;
+    // int n;
     // infinite loop for chat
     for (;;) {
-        std::memset(buff, 0, buffer_size);
+        std::memset(buff, 0x0, buffer_size);
 
         // read the message from client and copy it in buffer
         if (_recv(connfd, buff, buffer_size, 0) <= 0) {
@@ -105,19 +105,19 @@ int func(int connfd, size_t buffer_size)
         }
         // print buffer which contains the client contents
         //LOG_INFO("From client: %s\t To client : ", buff);
-//        bzero(buff, MAX);
-//        n = 0;
-//        // copy server message in the buffer
-//        while ((buff[n++] = getchar()) != '\n')
-//            ;
+        // bzero(buff, MAX);
+        // n = 0;
+        // // copy server message in the buffer
+        // while ((buff[n++] = getchar()) != '\n')
+        //     ;
 
-        if (strncmp(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1) != 0) {
+        if (std::strncmp(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1) != 0) {
             LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
         }
 
-        if (strncmp(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1, MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1) != 0) {
+        if (std::strncmp(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1, MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1) != 0) {
             LOG_ERR("message is broken!\n");
             ret = EXIT_FAILURE;
             break;
@@ -221,14 +221,15 @@ int main(int argc, char *argv[])
     }
     else
         LOG_INFO("Socket successfully created..\n");
-    bzero(&servaddr, sizeof(servaddr));
+    std::memset(&servaddr, 0x0, sizeof(servaddr));
 
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(port);
 
-    int one = 1, zero = 0;
+    int one = 1;
+    // int zero = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {
         LOG_ERR("setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) failed: %s\n", strerror(errno));
         close(sockfd);
@@ -301,27 +302,39 @@ int main(int argc, char *argv[])
             //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
             struct sockaddr_in serv_addr;
             struct sockaddr_in clnt_addr;
-            socklen_t clnt_addr_size = clnt_addr_size=sizeof(clnt_addr);
+            socklen_t clnt_addr_size =sizeof(clnt_addr);
 
-            struct sockaddr_in addr1;
+            // struct sockaddr_in addr1;
             struct sockaddr_in addr2;
 
             struct sockaddr_in addr3;
             struct sockaddr_in addr4;
 
             socklen_t serv_len = sizeof(serv_addr);
-            int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
-            int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
+            // if (getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len) < 0) {
+            //     LOG_ERR("getpeername(): failed, %s(%d)\n", strerror(errno), errno);
+            //     std::exit(EXIT_FAILURE);
+            // }
+            if (getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len) < 0) {
+                LOG_ERR("getsockname(): failed, %s(%d)\n", strerror(errno), errno);
+                std::exit(EXIT_FAILURE);
+            }
 
-            LOG_INFO("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
-            LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
+            // LOG_INFO("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
+            // LOG_INFO("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
             LOG_INFO("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
             LOG_INFO("Server socket's port : %d\n", ntohs(addr3.sin_port));
             LOG_INFO("\n");
             LOG_INFO("\n");
 
-            int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
-            int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
+            if (getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size) < 0) {
+                LOG_ERR("getpeername(): failed, %s(%d)\n", strerror(errno), errno);
+                std::exit(EXIT_FAILURE);
+            }
+            if (getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size) < 0) {
+                LOG_ERR("getsockname(): failed, %s(%d)\n", strerror(errno), errno);
+                std::exit(EXIT_FAILURE);
+            }
 
             LOG_INFO("   Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
             LOG_INFO("   client socket's peer port %d\n", ntohs(addr2.sin_port));

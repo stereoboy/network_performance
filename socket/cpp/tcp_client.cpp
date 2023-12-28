@@ -92,20 +92,20 @@ int func(int sockfd, size_t buffer_size)
     std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
 
     char *buff = (char*) std::malloc(buffer_size);
-    std::strncpy(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1);
-    std::strncpy(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1 , MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1);
+    std::memcpy(buff, MESSAGE_BEGIN_STRING, sizeof(MESSAGE_BEGIN_STRING) - 1);
+    std::memcpy(buff + buffer_size - sizeof(MESSAGE_END_STRING) - 1 , MESSAGE_END_STRING, sizeof(MESSAGE_END_STRING) - 1);
 
-    int n;
+    // int n;
     uint64_t count = 0;
     auto b = std::chrono::high_resolution_clock::now();
     for (;;) {
         auto b_frame = std::chrono::high_resolution_clock::now();
         //bzero(buff, sizeof(buff));
         //LOG_INFO("Enter the string : ");
-        n = 0;
-//        while ((buff[n++] = getchar()) != '\n') {
-//            LOG_INFO("<%c>\n", buff[n-1]);
-//        }
+        // n = 0;
+        // while ((buff[n++] = getchar()) != '\n') {
+        //     LOG_INFO("<%c>\n", buff[n-1]);
+        // }
         // buff[MAX-1] = count;
         count++;
         if (_send(sockfd, buff, buffer_size, 0) < 0) {
@@ -114,7 +114,7 @@ int func(int sockfd, size_t buffer_size)
         }
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        std::memset(buff, 0, buffer_size);
+        std::memset(buff, 0x0, buffer_size);
 
 
         if (_recv(sockfd, buff, buffer_size, 0) <= 0) {
@@ -187,8 +187,8 @@ void signal_handler(int s)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, connfd;
-    struct sockaddr_in servaddr, cli;
+    int sockfd;
+    struct sockaddr_in servaddr;
 
     // init signal handler
     std::signal(SIGINT, signal_handler);
@@ -259,9 +259,10 @@ int main(int argc, char *argv[])
     }
     else
         LOG_INFO("Socket successfully created..\n");
-    bzero(&servaddr, sizeof(servaddr));
+    std::memset(&servaddr, 0x0, sizeof(servaddr));
 
-    int one = 1, zero = 0;
+    int one = 1;
+    // int zero = 0;
     if (setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) < 0) {
         LOG_ERR("setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one)) failed: %s\n", strerror(errno));
         close(sockfd);
@@ -283,7 +284,7 @@ int main(int argc, char *argv[])
 
     // connect the client socket to server socket
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) {
-        LOG_INFO("connection with the server failed...\n");
+        LOG_ERR("connect(): connection with the server failed, %s(%d)\n", strerror(errno), errno);
         close(sockfd);
         std::exit(EXIT_FAILURE);
     }
@@ -300,7 +301,10 @@ int main(int argc, char *argv[])
     //  - https://stackoverflow.com/questions/49335001/get-local-ip-address-in-c
     struct sockaddr_in name;
     socklen_t namelen = sizeof(name);
-    int err = getsockname(sockfd, (struct sockaddr*)&name, &namelen);
+    if (getsockname(sockfd, (struct sockaddr*)&name, &namelen) < 0) {
+        LOG_ERR("getsockname(): failed, %s(%d)\n", strerror(errno), errno);
+        std::exit(EXIT_FAILURE);
+    }
 
     char buffer[INET_ADDRSTRLEN];
     const char* p = inet_ntop(AF_INET, &name.sin_addr, buffer, INET_ADDRSTRLEN);
@@ -315,10 +319,15 @@ int main(int argc, char *argv[])
     struct sockaddr_in addr1;
     struct sockaddr_in addr2;
 
-    int clnt_sock_err, clnt_peer_err;
     socklen_t serv_len = sizeof(addr1);
-    clnt_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
-    clnt_sock_err = getsockname(sockfd, (struct sockaddr *)&addr2, &serv_len);
+    if (getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len) < 0) {
+        LOG_ERR("getpeername(): failed, %s(%d)\n", strerror(errno), errno);
+        std::exit(EXIT_FAILURE);
+    }
+    if (getsockname(sockfd, (struct sockaddr *)&addr2, &serv_len) < 0) {
+        LOG_ERR("getsockname(): failed, %s(%d)\n", strerror(errno), errno);
+        std::exit(EXIT_FAILURE);
+    }
 
     LOG_INFO("Client socket's ip : %s\n", inet_ntoa(addr2.sin_addr));
     LOG_INFO("client socket's port %d\n", ntohs(addr2.sin_port));
