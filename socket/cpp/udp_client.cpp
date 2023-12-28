@@ -1,7 +1,7 @@
 /*
  * references
  *  - https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/
- *
+ *  - https://www.geeksforgeeks.org/udp-server-client-implementation-c/
  *
  */
 
@@ -38,7 +38,7 @@ static struct option long_options[] = {
 
 void print_help(void) {
     LOG_INFO("usage: tcp_client [-h] [-H HOST] [-p PORT]\n\n");
-    LOG_INFO("This is toy tcp client to test comm latency\n\n");
+    LOG_INFO("This is toy udp client to test comm latency\n\n");
     LOG_INFO("options:\n");
 
     LOG_INFO("  -h,      --help                  show this help message and exit\n");
