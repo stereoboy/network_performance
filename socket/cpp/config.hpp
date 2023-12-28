@@ -8,5 +8,5 @@
 #define MESSAGE_END_STRING      "WORLD"
 
 #define UDP_SEND_FLAG           MSG_CONFIRM
-#define UDP_RECV_FLAG           MSG_WAITALL
+#define UDP_RECV_FLAG           0
 #endif // CONFIG_HPP
