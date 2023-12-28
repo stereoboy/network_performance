@@ -148,6 +148,7 @@ void signal_handler(int s)
 int main(int argc, char *argv[])
 {
     int sockfd;
+    struct sockaddr_in cliaddr;
     struct sockaddr_in servaddr;
 
     // init signal handler
@@ -219,7 +220,20 @@ int main(int argc, char *argv[])
     }
     else
         LOG_INFO("Socket successfully created..\n");
-    std::memset(&servaddr, 0x0, sizeof(servaddr));
+
+    // assign IP, PORT
+    std::memset(&cliaddr, 0x0, sizeof(cliaddr));
+    cliaddr.sin_family = AF_INET;
+    cliaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    cliaddr.sin_port = htons(port + 1);
+
+    if ((bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr))) != 0) {
+        LOG_ERR("socket bind failed...\n");
+        close(sockfd);
+        std::exit(EXIT_FAILURE);
+    }
+    else
+        LOG_INFO("Socket successfully binded..\n");
 
     // int one = 1;
     // int zero = 0;
@@ -254,6 +268,7 @@ int main(int argc, char *argv[])
     LOG_INFO("RCVBUF recv buffer size = %d\n", retbuf);
 
     // assign IP, PORT
+    std::memset(&servaddr, 0x0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(server_hostname);
     servaddr.sin_port = htons(port);
