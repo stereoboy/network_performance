@@ -28,9 +28,10 @@
 
 static struct option long_options[] = {
     {"help",                no_argument,        nullptr,  'h' },
-    // {"hostname",            required_argument,  nullptr,  's' },
+    {"hostname",            required_argument,  nullptr,  's' },
     {"port",                required_argument,  nullptr,  'p' },
     {"buffer-size",         required_argument,  nullptr,  'b' },
+    {"debug",               no_argument,        nullptr,  'd' },
     {nullptr,               0,                  nullptr,  0 },
 };
 
@@ -40,13 +41,14 @@ void print_help(void) {
     LOG_INFO("options:\n");
 
     LOG_INFO("  -h,      --help                  show this help message and exit\n");
-    // LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
+    LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
     LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
     LOG_INFO("  -b SIZE, --buffer-size     SIZE  set message buffer-size\n");
+    LOG_INFO("  -d,      --debug                 enable debug messages\n");
 }
 
 // Function designed for chat between client and server.
-int func(int connfd, size_t buffer_size)
+int func(int connfd, size_t buffer_size, bool debug)
 {
     int ret = EXIT_SUCCESS;
 
@@ -58,17 +60,26 @@ int func(int connfd, size_t buffer_size)
 
     // int n;
     // infinite loop for chat
+    bool printed = false;
     for (;;) {
         std::memset(buff, 0x0, buffer_size);
 
         // read the message from client and copy it in buffer
-        if (recvfrom(connfd, buff, buffer_size, UDP_RECV_FLAG, (struct sockaddr *) &cliaddr, &len) <= 0) {
-            LOG_ERR("_recv failed: %s(%d)\n", strerror(errno), errno);
+        ssize_t size = recvfrom(connfd, buff, buffer_size, UDP_RECV_FLAG, (struct sockaddr *) &cliaddr, &len);
+        if (size <= 0) {
+            LOG_ERR("recvfrom failed: %s(%d)\n", strerror(errno), errno);
             LOG_INFO("Server closed\n");
             break;
+        } else if (size < (ssize_t) buffer_size) {
+            LOG_WARN("data from recvfrom is broken: %s(%d)\n", strerror(errno), errno);
         }
+
+
+        char *cliaddr_str = inet_ntoa(cliaddr.sin_addr);
+        int cliaddr_port = ntohs(cliaddr.sin_port);
         // print buffer which contains the client contents
-        //LOG_INFO("From client: %s\t To client : ", buff);
+        if (debug) if(!printed) LOG_DEBUG("message from %s:%d\n", cliaddr_str, cliaddr_port);
+        printed = true;
         // bzero(buff, MAX);
         // n = 0;
         // // copy server message in the buffer
@@ -90,7 +101,7 @@ int func(int connfd, size_t buffer_size)
         //std::this_thread::sleep_for(std::chrono::milliseconds(15));
         // and send that buffer to client
         if (sendto(connfd, buff, buffer_size, UDP_SEND_FLAG, (const struct sockaddr *) &cliaddr, len) < 0) {
-            LOG_ERR("_send failed: %s(%d)\n", strerror(errno), errno);
+            LOG_ERR("sendto failed: %s(%d)\n", strerror(errno), errno);
             break;
         }
 
@@ -134,13 +145,16 @@ int main(int argc, char *argv[])
     //  - https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
     //  - https://man7.org/linux/man-pages/man3/getopt.3.html
     //
+    const char *server_hostname_default = "127.0.0.1";
+    char *server_hostname = (char *)server_hostname_default;
     int port            = PORT;
     size_t buffer_size  = MAX_BUFFER_SIZE;
+    bool debug = false;
     int c;
     opterr = 0;
 
     int option_index = 0;
-    while ((c = getopt_long (argc, argv, "hs:p:b:", long_options, &option_index)) != -1)
+    while ((c = getopt_long (argc, argv, "hs:p:b:d", long_options, &option_index)) != -1)
         switch (c)
         {
             case 0:
@@ -151,12 +165,15 @@ int main(int argc, char *argv[])
                 break;
             case 'h':
                 print_help();
-                return 0;
+                return EXIT_SUCCESS;
             case 'p':
                 port = atoi(optarg);
                 break;
             case 'b':
                 buffer_size = (size_t)atoi(optarg);
+                break;
+            case 'd':
+                debug = true;
                 break;
             case '?':
                 if (optopt == 'r')
@@ -165,12 +182,14 @@ int main(int argc, char *argv[])
                     fprintf (stderr, "Unknown option or no argument `-%c'.\n", optopt);
                 else
                     fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
-                return 1;
+                return EXIT_FAILURE;
             default:
                 LOG_INFO("return=%c(%x)\n", c, c);
-                abort ();
+                print_help();
+                return EXIT_FAILURE;
         }
 
+    LOG_INFO("\tserver_hostname: %s\n", server_hostname);
     LOG_INFO("\tport           : %d\n", port);
     LOG_INFO("\tbuffer-size    : %ld\n", buffer_size);
 
@@ -187,9 +206,9 @@ int main(int argc, char *argv[])
     }
     else
         LOG_INFO("Socket successfully created..\n");
-    std::memset(&servaddr, 0x0, sizeof(servaddr));
 
     // assign IP, PORT
+    std::memset(&servaddr, 0x0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(port);
@@ -327,7 +346,7 @@ int main(int argc, char *argv[])
 
             // Function for chatting between client and server
             {
-                ret = func(sockfd, buffer_size);
+                ret = func(sockfd, buffer_size, debug);
             }
 
             // close sockets

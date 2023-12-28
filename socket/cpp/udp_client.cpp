@@ -32,6 +32,7 @@ static struct option long_options[] = {
     {"server-hostname",     required_argument,  nullptr,  's' },
     {"port",                required_argument,  nullptr,  'p' },
     {"buffer-size",         required_argument,  nullptr,  'b' },
+    {"debug",               no_argument,        nullptr,  'd' },
     {nullptr,               0,                  nullptr,  0 },
 };
 
@@ -44,10 +45,12 @@ void print_help(void) {
     LOG_INFO("  -s HOST, --server-hostname HOST  set server hostname\n");
     LOG_INFO("  -p PORT, --port            PORT  set server port number\n");
     LOG_INFO("  -b SIZE, --buffer-size     SIZE  set message buffer-size\n");
+    LOG_INFO("  -d,      --debug                 enable debug messages\n");
 }
 
-int func(int sockfd, const struct sockaddr_in &servaddr, size_t buffer_size)
+int func(int sockfd, const struct sockaddr_in &servaddr, size_t buffer_size,  bool debug)
 {
+    debug = debug;
     int ret = EXIT_SUCCESS;
     std::priority_queue<double, std::vector<double>, std::greater<double>> min_heap;
 
@@ -163,6 +166,7 @@ int main(int argc, char *argv[])
     char *server_hostname = (char *)server_hostname_default;
     int port            = PORT;
     size_t buffer_size  = MAX_BUFFER_SIZE;
+    bool debug = false;
     int c;
     opterr = 0;
 
@@ -187,6 +191,9 @@ int main(int argc, char *argv[])
                 break;
             case 'b':
                 buffer_size = (size_t)atoi(optarg);
+                break;
+            case 'd':
+                debug = true;
                 break;
             case '?':
                 if (optopt == 'r')
@@ -331,7 +338,7 @@ int main(int argc, char *argv[])
 
     // function for chat
     try {
-        ret = func(sockfd, servaddr, buffer_size);
+        ret = func(sockfd, servaddr, buffer_size, debug);
     } catch (InterruptException &e) {
         LOG_ERR("Terminated by Interrupt %s\n", e.what());
     }
