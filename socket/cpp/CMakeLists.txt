@@ -16,11 +16,11 @@ include_directories(
 link_directories(
 )
 
-##building target executable
-#add_executable(udp_client udp_client.cpp)
-#
-##building target executable
-#add_executable(udp_server udp_server.cpp)
+#building target executable
+add_executable(udp_client udp_client.cpp)
+
+#building target executable
+add_executable(udp_server udp_server.cpp)
 
 #building target executable
 add_executable(tcp_client tcp_client.cpp)

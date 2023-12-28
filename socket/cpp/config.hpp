@@ -7,4 +7,6 @@
 #define MESSAGE_BEGIN_STRING    "HELLO"
 #define MESSAGE_END_STRING      "WORLD"
 
+#define UDP_SEND_FLAG           MSG_CONFIRM
+#define UDP_RECV_FLAG           MSG_WAITALL
 #endif // CONFIG_HPP
