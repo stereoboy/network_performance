@@ -144,6 +144,17 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 ## Ethernet Cable with Routers
 ### Router #2
+* ipTIME AX8004BCM
+  * https://prod.danawa.com/info/?pcode=10293579
+```
+무선 속도	AX6000(Wi-Fi 6)
+CPU제조사	브로드컴 BCM4908	CPU코어	쿼드 코어
+CPU클럭	1.8 GHz	RAM	1GB
+FLASH	128MB
+연결 단자
+WAN	1포트(2.5Gbps)	LAN	4포트(1Gbps)
+USB 3.0	1개
+```
 
 ### Router #2 - WIFI #1
 
