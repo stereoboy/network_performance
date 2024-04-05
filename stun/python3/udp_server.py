@@ -33,11 +33,14 @@ def main():
             default_hostname = ret[0]['addr']
 
     parser = argparse.ArgumentParser(description='This is toy server to test STUN')
+    parser.add_argument('-C', '--client-host', action='store', type=str, default='localhost')
+    parser.add_argument('-c', '--client-port', action='store', type=int, default=5000)
     parser.add_argument('-H', '--host', action='store', type=str, default=default_hostname, help='type exact ip address')
     parser.add_argument('-p', '--port', action='store', type=int, default=8000)
 
     options = parser.parse_args(sys.argv[1:])
     logger.info("options={}".format(options))
+
 
     nat_type, external_ip, external_port = stun.get_ip_info(
                                                     stun_host="stun.l.google.com",
@@ -51,9 +54,12 @@ def main():
 
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
+            # server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             server_socket.bind((options.host, options.port))
             logger.info("UDP Server started")
             while True:
+                message = b"Hello, Client!"
+                server_socket.sendto(message, (options.client_host, options.client_port))
                 response, client = server_socket.recvfrom(1024)
                 logger.info(f"Received response: {response} from: {client}")
 
