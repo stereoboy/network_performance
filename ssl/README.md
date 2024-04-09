@@ -1,3 +1,70 @@
+## Run
+### Socket
+```
+python3 ./client_socket.py
+```
+```
+python3 ./server_socket.py
+```
+```
+$ sudo tcpdump -i lo  -vv -X   port 5000
+tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
+21:41:41.602194 IP (tos 0x0, ttl 64, id 16567, offset 0, flags [DF], proto TCP (6), length 60)
+    rofox-home-desktop.54410 > rofox-home-desktop.5000: Flags [S], cksum 0xf015 (incorrect -> 0xe4a0), seq 2245388923, win 65495, options [mss 65495,sackOK,TS val 2152964292 ecr 0,nop,wscale 7], length 0
+        0x0000:  4500 003c 40b7 4000 4006 0a1e c0a8 374b  E..<@.@.@.....7K
+        0x0010:  c0a8 374b d48a 1388 85d5 ea7b 0000 0000  ..7K.......{....
+        0x0020:  a002 ffd7 f015 0000 0204 ffd7 0402 080a  ................
+        0x0030:  8053 a0c4 0000 0000 0103 0307            .S..........
+21:41:41.602204 IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto TCP (6), length 60)
+    rofox-home-desktop.5000 > rofox-home-desktop.54410: Flags [S.], cksum 0xf015 (incorrect -> 0xbdb7), seq 177797939, ack 2245388924, win 65483, options [mss 65495,sackOK,TS val 2152964292 ecr 215296429
+2,nop,wscale 7], length 0
+        0x0000:  4500 003c 0000 4000 4006 4ad5 c0a8 374b  E..<..@.@.J...7K
+        0x0010:  c0a8 374b 1388 d48a 0a98 fb33 85d5 ea7c  ..7K.......3...|
+        0x0020:  a012 ffcb f015 0000 0204 ffd7 0402 080a  ................
+        0x0030:  8053 a0c4 8053 a0c4 0103 0307            .S...S......
+21:41:41.602212 IP (tos 0x0, ttl 64, id 16568, offset 0, flags [DF], proto TCP (6), length 52)
+    rofox-home-desktop.54410 > rofox-home-desktop.5000: Flags [.], cksum 0xf00d (incorrect -> 0xe473), seq 1, ack 1, win 512, options [nop,nop,TS val 2152964292 ecr 2152964292], length 0
+        0x0000:  4500 0034 40b8 4000 4006 0a25 c0a8 374b  E..4@.@.@..%..7K
+        0x0010:  c0a8 374b d48a 1388 85d5 ea7c 0a98 fb34  ..7K.......|...4
+        0x0020:  8010 0200 f00d 0000 0101 080a 8053 a0c4  .............S..
+        0x0030:  8053 a0c4                                .S..
+21:41:41.602325 IP (tos 0x0, ttl 64, id 16569, offset 0, flags [DF], proto TCP (6), length 569)
+    rofox-home-desktop.54410 > rofox-home-desktop.5000: Flags [P.], cksum 0xf212 (incorrect -> 0x1db0), seq 1:518, ack 1, win 512, options [nop,nop,TS val 2152964292 ecr 2152964292], length 517
+        0x0000:  4500 0239 40b9 4000 4006 081f c0a8 374b  E..9@.@.@.....7K
+        0x0010:  c0a8 374b d48a 1388 85d5 ea7c 0a98 fb34  ..7K.......|...4
+        0x0020:  8018 0200 f212 0000 0101 080a 8053 a0c4  .............S..
+        0x0030:  8053 a0c4 1603 0102 0001 0001 fc03 03fb  .S..............
+        0x0040:  8361 9de2 1f68 ccc2 c9e6 1c50 9d83 b9cd  .a...h.....P....
+        0x0050:  c06d 1304 69ab 31ed 40e9 0ea4 c8c5 e020  .m..i.1.@.......
+        0x0060:  7ff8 3c59 4927 41c3 4bda 3f64 45b9 ccab  ..<YI'A.K.?dE...
+        0x0070:  f5bd 7929 d332 c0e7 6ab5 6709 2e80 e021  ..y).2..j.g....!
+        0x0080:  003e 1302 1303 1301 c02c c030 009f cca9  .>.......,.0....
+        0x0090:  cca8 ccaa c02b c02f 009e c024 c028 006b  .....+./...$.(.k
+        0x00a0:  c023 c027 0067 c00a c014 0039 c009 c013  .#.'.g.....9....
+        0x00b0:  0033 009d 009c 003d 003c 0035 002f 00ff  .3.....=.<.5./..
+        0x00c0:  0100 0175 0000 0015 0013 0000 1063 6f6f  ...u.........coo
+        0x00d0:  7072 6f62 6f74 6963 732e 636f 6d00 0b00  probotics.com...
+        0x00e0:  0403 0001 0200 0a00 0c00 0a00 1d00 1700  ................
+        0x00f0:  1e00 1900 1800 2300 0000 1600 0000 1700  ......#.........
+        0x0100:  0000 0d00 2a00 2804 0305 0306 0308 0708  ....*.(.........
+        0x0110:  0808 0908 0a08 0b08 0408 0508 0604 0105  ................
+        0x0120:  0106 0103 0303 0103 0204 0205 0206 0200  ................
+        0x0130:  2b00 0504 0304 0303 002d 0002 0101 0033  +........-.....3
+        0x0140:  0026 0024 001d 0020 703d 5b5a 1529 7b30  .&.$....p=[Z.){0
+        0x0150:  60e0 75d8 c1ce b660 e034 18bc af60 f3ce  `.u....`.4...`..
+        0x0160:  cb2d 7bb8 c29c cd0c 0015 00cd 0000 0000  .-{.............
+
+```
+### Websockets
+* https://websockets.readthedocs.io/en/stable/howto/quickstart.html
+```
+pip install websockets
+python3 ./websocket_client.py
+```
+```
+python3 ./websocket_socket.py
+```
+
 ## Generation: CAbundle.pem, crtchain.pem, private.key
 ### References
 * https://akshitb.medium.com/how-to-run-https-on-localhost-a-step-by-step-guide-c61fde893771
