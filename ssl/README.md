@@ -1,3 +1,9 @@
+## References
+* What is a Self-Signed Certificate? Advantages, Risks & Alternatives
+  * https://www.keyfactor.com/blog/self-signed-certificate-risks/
+* ssl — TLS/SSL wrapper for socket objects, SSLContext
+  * https://docs.python.org/3/library/ssl.html#ssl-contexts
+
 ## Run
 ### Socket
 ```
@@ -53,6 +59,47 @@ tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
         0x0140:  0026 0024 001d 0020 703d 5b5a 1529 7b30  .&.$....p=[Z.){0
         0x0150:  60e0 75d8 c1ce b660 e034 18bc af60 f3ce  `.u....`.4...`..
         0x0160:  cb2d 7bb8 c29c cd0c 0015 00cd 0000 0000  .-{.............
+
+```
+### No SSL Socket
+```
+python3 ./nossl_client_socket.py
+```
+```
+python3 ./nossl_server_socket.py
+```
+```
+$ sudo tcpdump -i lo  -vv -X   port 5000
+[sudo] password for rofox:
+tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:21:05.966223 IP (tos 0x0, ttl 64, id 64046, offset 0, flags [DF], proto TCP (6), length 60)
+    localhost.59184 > localhost.5000: Flags [S], cksum 0xfe30 (incorrect -> 0xc82f), seq 1560340435, win 65495, options [mss 65495,sackOK,TS val 2458367421 ecr 0,nop,wscale 7], length 0
+        0x0000:  4500 003c fa2e 4000 4006 428b 7f00 0001  E..<..@.@.B.....
+        0x0010:  7f00 0001 e730 1388 5d00 e7d3 0000 0000  .....0..].......
+        0x0020:  a002 ffd7 fe30 0000 0204 ffd7 0402 080a  .....0..........
+        0x0030:  9287 b5bd 0000 0000 0103 0307            ............
+22:21:05.966233 IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto TCP (6), length 60)
+    localhost.5000 > localhost.59184: Flags [S.], cksum 0xfe30 (incorrect -> 0x06c7), seq 149516341, ack 1560340436, win 65483, options [mss 65495,sackOK,TS val 2458367421 ecr 2458367421,nop,wscale 7], l
+ength 0
+        0x0000:  4500 003c 0000 4000 4006 3cba 7f00 0001  E..<..@.@.<.....
+        0x0010:  7f00 0001 1388 e730 08e9 7035 5d00 e7d4  .......0..p5]...
+        0x0020:  a012 ffcb fe30 0000 0204 ffd7 0402 080a  .....0..........
+        0x0030:  9287 b5bd 9287 b5bd 0103 0307            ............
+22:21:05.966241 IP (tos 0x0, ttl 64, id 64047, offset 0, flags [DF], proto TCP (6), length 52)
+    localhost.59184 > localhost.5000: Flags [.], cksum 0xfe28 (incorrect -> 0x2d83), seq 1, ack 1, win 512, options [nop,nop,TS val 2458367421 ecr 2458367421], length 0
+        0x0000:  4500 0034 fa2f 4000 4006 4292 7f00 0001  E..4./@.@.B.....
+        0x0010:  7f00 0001 e730 1388 5d00 e7d4 08e9 7036  .....0..].....p6
+        0x0020:  8010 0200 fe28 0000 0101 080a 9287 b5bd  .....(..........
+        0x0030:  9287 b5bd                                ....
+22:21:05.966259 IP (tos 0x0, ttl 64, id 64048, offset 0, flags [DF], proto TCP (6), length 84)
+    localhost.59184 > localhost.5000: Flags [P.], cksum 0xfe48 (incorrect -> 0x0aac), seq 1:33, ack 1, win 512, options [nop,nop,TS val 2458367421 ecr 2458367421], length 32
+        0x0000:  4500 0054 fa30 4000 4006 4271 7f00 0001  E..T.0@.@.Bq....
+        0x0010:  7f00 0001 e730 1388 5d00 e7d4 08e9 7036  .....0..].....p6
+        0x0020:  8018 0200 fe48 0000 0101 080a 9287 b5bd  .....H..........
+        0x0030:  9287 b5bd 4845 4c4c 4f20 574f 524c 4420  ....HELLO.WORLD.
+        0x0040:  3020 2020 2020 2020 2020 2020 2020 2020  0...............
+        0x0050:  2020 2020                                ....
+                           ...^
 
 ```
 ### Websockets
