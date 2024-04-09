@@ -1,8 +1,19 @@
 ## References
+* SSL works without Client certificate
+  * https://stackoverflow.com/questions/3107625/ssl-works-without-client-certificate
+
+  > Think about certificate not in terms of encrypting-decrypting, but in terms of authentication. Encryption can be done without certificates at all - just knowing open key is enough. But certificate contains different fields, among them is personality of certificate owner. For web this value is the domain name of the server you wish to connect to. As there are means to check that IP address of the server is always equal to name stated in certificate (forward and backward DNS requests), you can be sure that you're talking to the one you wish to.
+  >
+  > In this terms, client certificate issue should be much simpler to understand. Client certificate allows server to authenticate client, so the authentication will be mutual. Server could check, for example, that the client certificate is valid (not expired, not black-listed, etc.).
+
 * What is a Self-Signed Certificate? Advantages, Risks & Alternatives
   * https://www.keyfactor.com/blog/self-signed-certificate-risks/
 * ssl — TLS/SSL wrapper for socket objects, SSLContext
   * https://docs.python.org/3/library/ssl.html#ssl-contexts
+
+### python socket with SSL
+* https://pythontic.com/ssl/sslcontext/load_verify_locations
+* https://pythontic.com/ssl/sslcontext/load_cert_chain
 
 ## Run
 ### Socket
