@@ -1,9 +1,12 @@
 import socket
+import stun
+import netifaces
 import sys
 import threading
 
 import argparse
 import logging
+
 
 logger = logging.getLogger('STUN/UDP Peer')
 logger.setLevel(logging.INFO)
@@ -19,11 +22,36 @@ def main():
     options = parser.parse_args(sys.argv[1:])
     logger.info("options={}".format(options))
 
+    #
+    # references
+    #  - https://stackoverflow.com/questions/30698521/python-netifaces-how-to-get-currently-used-network-interface
+    #  - https://pypi.org/project/netifaces/
+    #
+    default_gateway_iface = netifaces.gateways()['default'][netifaces.AF_INET][1]
+    logger.info(f"default_gateway_iface={default_gateway_iface}")
+
+    for iface in netifaces.interfaces():
+        ifaddresses = netifaces.ifaddresses(iface)
+        ret = ifaddresses.get(netifaces.AF_INET, None)
+        if ret and iface == default_gateway_iface:
+            logger.info(f"default_ip=[{iface}] {ret[0]['addr']}")
+            default_ip = ret[0]['addr']
+
+    nat_type, external_ip, external_port = stun.get_ip_info(
+                                                    stun_host="stun.l.google.com",
+                                                    stun_port=19302,
+                                                    source_ip=default_ip,
+                                                    source_port=options.data_port)
+
+    logger.info(f"nat_type={nat_type}")
+    logger.info(f"external_ip={external_ip}")
+    logger.info(f"external_port={external_port}")
+
     logger.info('connecting to signaling server')
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('0.0.0.0', options.data_port))
-    sock.sendto(b'0', (options.host, options.port))
+    sock.sendto('{} {}'.format(external_ip, external_port).encode(), (options.host, options.port))
 
     while True:
         data = sock.recv(1024).decode()

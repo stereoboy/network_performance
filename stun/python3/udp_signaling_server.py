@@ -27,6 +27,10 @@ def main():
         while True:
             data, address = sock.recvfrom(128)
 
+            logger.info('data={}'.format(data))
+
+            ip, port = data.decode().split(' ')
+            address = (ip, int(port))
             logger.info('connection from: {}'.format(address))
             clients.append(address)
 
