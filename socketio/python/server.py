@@ -32,7 +32,7 @@ def connect(sid, environ):
     elapsed_time_queue = collections.deque(maxlen=100)
     start = time.time()
 
-@sio.on('ch1')
+@sio.on('message')
 def on_message(sid, data):
     global count, elapsed_time_queue, start
     logger.debug('>>> \tmessage: len(data)={}'.format(len(data)))
@@ -44,7 +44,7 @@ def on_message(sid, data):
     count += 1
     if count%100 == 0:
         logger.info("\t{} fps".format(1.0/np.mean(elapsed_time_queue)))
-    sio.emit('ch1', b'\x00', room=sid)
+    return True
 #    cv2.imshow('display', img)
 #    cv2.waitKey(1)
 
