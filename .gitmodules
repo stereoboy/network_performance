@@ -1,3 +1,6 @@
 [submodule "webrtc/cpp/peer_clients/lib/socket.io-client-cpp"]
 	path = webrtc/cpp/peer_clients/lib/socket.io-client-cpp
 	url = git@github.com:socketio/socket.io-client-cpp.git
+[submodule "webrtc/cpp/peer_clients/lib/abseil-cpp"]
+	path = webrtc/cpp/peer_clients/lib/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
