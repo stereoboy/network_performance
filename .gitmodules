@@ -4,3 +4,9 @@
 [submodule "webrtc/cpp/peer_clients/lib/abseil-cpp"]
 	path = webrtc/cpp/peer_clients/lib/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
+[submodule "webrtc/cpp/peer_clients/lib/spdlog"]
+	path = webrtc/cpp/peer_clients/lib/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "webrtc/cpp/llvm-project"]
+	path = webrtc/cpp/llvm-project
+	url = https://github.com/llvm/llvm-project.git
