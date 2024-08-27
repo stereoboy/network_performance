@@ -14,6 +14,8 @@ project("android-socket.io-cpp")
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+add_subdirectory(lib/socket.io-client-cpp)
+
 add_library( # Sets the name of the library.
              native-lib
 
@@ -45,4 +47,5 @@ target_link_libraries( # Specifies the target library.
 
                        # Links the target library to the log library
                        # included in the NDK.
-                       ${log-lib} )
+                       ${log-lib}
+                        sioclient )

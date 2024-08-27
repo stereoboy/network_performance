@@ -7,3 +7,6 @@
 [submodule "socket/android"]
 	path = socket/android
 	url = git@github.com:stereoboy/network-android.git
+[submodule "socketio/android/app/src/main/cpp/lib/socket.io-client-cpp"]
+	path = socketio/android/app/src/main/cpp/lib/socket.io-client-cpp
+	url = git@github.com:socketio/socket.io-client-cpp.git
