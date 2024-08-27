@@ -14,7 +14,7 @@
 #define  LOGS(...)  __android_log_print(ANDROID_SILENT_ERROR,LOG_TAG,__VA_ARGS__)
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_crazinglab_androidnetwork_MainActivity_stringFromJNI(
+Java_com_crazinglab_socketiocpp_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
     std::string hello = "Hello from C++";
@@ -24,7 +24,7 @@ Java_com_crazinglab_androidnetwork_MainActivity_stringFromJNI(
 static pthread_t app_thread;
 static void *server_thread(void *userdata);
 extern "C" JNIEXPORT void JNICALL
-Java_com_crazinglab_androidnetwork_MainActivity_initThread(
+Java_com_crazinglab_socketiocpp_MainActivity_initThread(
         JNIEnv* env,
         jobject /* this */) {
 

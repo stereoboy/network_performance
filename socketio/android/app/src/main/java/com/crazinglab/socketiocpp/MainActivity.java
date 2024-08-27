@@ -1,11 +1,11 @@
-package com.crazinglab.androidnetwork;
+package com.crazinglab.socketiocpp;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.widget.TextView;
 
-import com.crazinglab.androidnetwork.databinding.ActivityMainBinding;
+import com.crazinglab.socketiocpp.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
 

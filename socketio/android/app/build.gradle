@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.0"
 
     defaultConfig {
-        applicationId "com.crazinglab.androidnetwork"
+        applicationId "com.crazinglab.socketiocpp"
         minSdkVersion 29
         targetSdkVersion 33
         versionCode 1

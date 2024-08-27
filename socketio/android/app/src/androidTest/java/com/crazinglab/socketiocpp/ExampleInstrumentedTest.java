@@ -1,4 +1,4 @@
-package com.crazinglab.androidnetwork;
+package com.crazinglab.socketiocpp;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.crazinglab.androidnetwork", appContext.getPackageName());
+        assertEquals("com.crazinglab.socketiocpp", appContext.getPackageName());
     }
 }

@@ -1,4 +1,4 @@
-package com.crazinglab.androidnetwork;
+package com.crazinglab.socketiocpp;
 
 import org.junit.Test;
 
