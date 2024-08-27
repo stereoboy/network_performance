@@ -4,3 +4,6 @@
 [submodule "webrtc/cpp/peer_clients/lib/spdlog"]
 	path = webrtc/cpp/peer_clients/lib/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "socket/android"]
+	path = socket/android
+	url = git@github.com:stereoboy/network-android.git
