@@ -14,9 +14,27 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+
         externalNativeBuild {
             cmake {
                 cppFlags ''
+                arguments "-DCMAKE_VERBOSE_MAKEFILE=ON"
+            }
+        }
+
+        //
+        // reference
+        // https://developer.android.com/studio/projects/gradle-external-native-builds#groovy
+        // https://hankyo-dev.tistory.com/entry/Android-%EB%AF%B8%EB%A6%AC-%EB%B9%8C%EB%93%9C%EB%90%9C-Dynamic-Libraryso-file-Android-Project%EC%97%90-%EC%B6%94%EA%B0%80%ED%95%98%EB%8A%94-%EB%B0%A9%EB%B2%95
+        //
+        sourceSets {
+            main {
+                // let gradle pack the shared library into apk
+                jniLibs.srcDirs = ['/src/main/jniLibs']
             }
         }
     }

@@ -56,6 +56,8 @@ Java_com_crazinglab_socketiocpp_MainActivity_initThread(
 #define MAX 512
 #define PORT 8080
 
+#include "sio_client.h"
+
 // Function designed for chat between client and server.
 void func(int connfd)
 {
@@ -94,6 +96,8 @@ void func(int connfd)
 // Driver function
 static void *server_thread(void *userdata)
 {
+    sio::client sio_client;
+
     int sockfd = -1, connfd = -1;
     socklen_t len;
     struct sockaddr_in servaddr, cli;

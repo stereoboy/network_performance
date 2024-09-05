@@ -10,3 +10,6 @@
 [submodule "socketio/android/app/src/main/cpp/lib/socket.io-client-cpp"]
 	path = socketio/android/app/src/main/cpp/lib/socket.io-client-cpp
 	url = git@github.com:socketio/socket.io-client-cpp.git
+[submodule "socketio/android/app/src/main/jniLibs/openssl_src"]
+	path = socketio/android/app/src/main/jniLibs/openssl_src
+	url = git@github.com:openssl/openssl.git
