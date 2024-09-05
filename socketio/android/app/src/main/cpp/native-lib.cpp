@@ -1,8 +1,14 @@
 #include <jni.h>
 #include <string>
+#include <condition_variable>
+#include <chrono>
+#include <thread>
 #include <pthread.h>
 #include <android/log.h>
-#define  LOG_TAG    "NDK_SERVER"
+
+#include "sio_client.h"
+
+#define  LOG_TAG    "SocketIOCPP"
 #define  LOGUNK(...)  __android_log_print(ANDROID_LOG_UNKNOWN,LOG_TAG,__VA_ARGS__)
 #define  LOGDEF(...)  __android_log_print(ANDROID_LOG_DEFAULT,LOG_TAG,__VA_ARGS__)
 #define  LOGV(...)  __android_log_print(ANDROID_LOG_VERBOSE,LOG_TAG,__VA_ARGS__)
@@ -13,11 +19,17 @@
 #define  LOGF(...)  __android_log_print(ANDROID_FATAL_ERROR,LOG_TAG,__VA_ARGS__)
 #define  LOGS(...)  __android_log_print(ANDROID_SILENT_ERROR,LOG_TAG,__VA_ARGS__)
 
+#define SERVER_HOSTNAME "localhost"
+#define SERVER_PORT 5002
+#define NAMESPACE "/controller"
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_crazinglab_socketiocpp_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
-    std::string hello = "Hello from C++";
+    std::string hello = "[Server]\n - ";
+    hello += SERVER_HOSTNAME;
+    hello += ":" + std::to_string(SERVER_PORT);
     return env->NewStringUTF(hello.c_str());
 }
 
@@ -32,173 +44,123 @@ Java_com_crazinglab_socketiocpp_MainActivity_initThread(
     pthread_create(&app_thread, nullptr, server_thread, nullptr);
 }
 
-/*
- * references
- *  - https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/
- *
- *
- */
-
-#include <stdio.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-
-#include <chrono>
-#include <thread>
-
-#define MAX 512
-#define PORT 8080
-
-#include "sio_client.h"
-
-// Function designed for chat between client and server.
-void func(int connfd)
+std::mutex _lock;
+std::condition_variable_any _cond;
+bool connect_finish = false;
+class connection_listener
 {
-    char buff[MAX];
-    int n;
-    // infinite loop for chat
-    for (;;) {
-        bzero(buff, MAX);
+    sio::client &handler;
 
-        // read the message from client and copy it in buffer
-        if (read(connfd, buff, sizeof(buff)) <= 0) {
-            LOGI("Connection Cloased");
-            break;
-        }
-        // print buffer which contains the client contents
-        LOGI("From client: %s\t To client : ", buff);
-        //bzero(buff, MAX);
-        n = 0;
-        // copy server message in the buffer
-        //while ((buff[n++] = getchar()) != '\n')
-        //    ;
-        //sprintf(buff, "test message from server\n");
+public:
+    connection_listener(sio::client &handler) : handler(handler) {
+    };
 
-        // and send that buffer to client
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
-        write(connfd, buff, sizeof(buff));
+    ~connection_listener(void) {
+    };
 
-        // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buff, 4) == 0) {
-            LOGI("Server Exit...\n");
-            break;
-        }
+    void on_connected()
+    {
+        LOGI("%s", __PRETTY_FUNCTION__ );
+        _lock.lock();
+        _cond.notify_all();
+        connect_finish = true;
+        _lock.unlock();
     }
-}
+    void on_close(sio::client::close_reason const& reason)
+    {
+        LOGI("%s: %d", __PRETTY_FUNCTION__, int(reason));
+        exit(0);
+    }
+
+    void on_fail()
+    {
+        LOGE("%s", __PRETTY_FUNCTION__ );
+        _lock.lock();
+        _cond.notify_all();
+        connect_finish = false;
+        _lock.unlock();
+    }
+};
 
 // Driver function
 static void *server_thread(void *userdata)
 {
     sio::client sio_client;
 
-    int sockfd = -1, connfd = -1;
-    socklen_t len;
-    struct sockaddr_in servaddr, cli;
+    connection_listener l(sio_client);
 
-    //get host name
-    char hostname[16];
-    memset(hostname, 0x0, sizeof(hostname));
-    gethostname(hostname, sizeof(hostname));
-    LOGI("Device Name (=hostname): %s\n", hostname);
+    sio_client.set_reconnect_attempts(0);
+    sio_client.set_open_listener(std::bind(&connection_listener::on_connected, &l));
+    sio_client.set_close_listener(std::bind(&connection_listener::on_close, &l,std::placeholders::_1));
+    sio_client.set_fail_listener(std::bind(&connection_listener::on_fail, &l));
 
-    // socket create and verification
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        LOGE("socket creation failed...\n");
-        return NULL;
+    LOGI("Tring to connect to %s:%d ...", SERVER_HOSTNAME, SERVER_PORT);
+    char buf[128];
+    sprintf(buf, "https://%s:%d", SERVER_HOSTNAME, SERVER_PORT);
+    sio_client.connect(buf);
+
+    _lock.lock();
+    if(!connect_finish)
+    {
+        _cond.wait(_lock);
     }
-    else
-        LOGI("Socket successfully created..\n");
-    bzero(&servaddr, sizeof(servaddr));
-
-    // assign IP, PORT
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
-
-    // Binding newly created socket to given IP and verification
-    if ((bind(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) {
-        LOGE("socket bind failed...\n");
+    _lock.unlock();
+    if(!connect_finish) {
+        LOGE("Connection failed.");
         return nullptr;
     }
-    else
-        LOGI("Socket successfully binded..\n");
 
-    // Now server is ready to listen and verification
-    if ((listen(sockfd, 5)) != 0) {
-        LOGE("Listen failed...\n");
-        return nullptr;
+    LOGI("Connected");
+    // after connection succeeded
+
+    // emit message object with lambda ack handler
+    std::string name = "test-controller-cpp-00";
+    std::string type = "test-controller";
+    std::string modelName = "test-controller-cpp";
+
+    sio::message::ptr msg = sio::object_message::create();
+    msg->get_map()["name"] = sio::string_message::create("android-controller-00");
+    msg->get_map()["type"] = sio::string_message::create("mobile-controller");
+    msg->get_map()["modelName"] = sio::string_message::create("android-controller");
+
+
+    sio_client.socket(NAMESPACE)->emit("login", msg, [&](sio::message::list const& msg) {
+        _lock.lock();
+        std::map<std::string, sio::message::ptr>& res_map = msg[0]->get_map();
+        res_map["ok"]->get_bool();
+
+        for (auto const & [key, val]: res_map["data"]->get_map()) {
+            if (val->get_flag() == sio::message::flag_string) {
+                LOGI("%s: %s (string)", key.c_str(), val->get_string().c_str());
+            } else if (val->get_flag() == sio::message::flag_integer) {
+                LOGI("%s: %d (int)", key.c_str(), val->get_int());
+            } else if (val->get_flag() == sio::message::flag_double) {
+                LOGI("%s: %f (double)", key.c_str(), val->get_double());
+            } else if (val->get_flag() == sio::message::flag_boolean) {
+                LOGI("%s: %s (boolean)", key.c_str(), val->get_bool()?"true":"false");
+            } else if (val->flag_integer) {
+                LOGI("%s: %d (int)", key.c_str(), val->get_int());
+            }
+        }
+
+        _cond.notify_all();
+        _lock.unlock();
+    });
+
+    _lock.lock();
+    _cond.wait(_lock);
+    _lock.unlock();
+
+    try {
+        while(true) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    } catch (std::exception &e) {
+        LOGE("Terminated by Interrupt %s", e.what());
     }
-    else
-        LOGI("Server listening..\n");
-    len = sizeof(cli);
 
-    // Accept the data packet from client and verification
-    connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
-    if (connfd < 0) {
-        LOGE("server accept failed...\n");
-        return nullptr;
-    }
-    else
-        LOGI("server accept the client...\n");
-
-    // reference
-    //   * https://stackoverflow.com/questions/3060950/how-to-get-ip-address-from-sock-structure-in-c
-    //   * http://man7.org/linux/man-pages/man3/inet_ntop.3.html
-    struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&cli;
-    struct in_addr ipAddr = pV4Addr->sin_addr;
-
-    char str[INET_ADDRSTRLEN];
-    const char *p = inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
-    if (p != nullptr) {
-        LOGI("  accepted from (addr=%s, port=%d)\n", str, ntohs(pV4Addr->sin_port)) ;
-    } else {
-        LOGE( "Error number: %s(%d)\n", strerror(errno), errno);
-    }
-
-    // reference
-    //  * https://stackoverflow.com/questions/46484240/getpeername-from-listeningserver-socket
-    struct sockaddr_in serv_addr;
-    struct sockaddr_in clnt_addr;
-    socklen_t clnt_addr_size = clnt_addr_size=sizeof(clnt_addr);
-
-    struct sockaddr_in addr1;
-    struct sockaddr_in addr2;
-
-    struct sockaddr_in addr3;
-    struct sockaddr_in addr4;
-
-    socklen_t serv_len = sizeof(serv_addr);
-    int serv_peer_err = getpeername(sockfd, (struct sockaddr *)&addr1, &serv_len);
-    int serv_sock_err = getsockname(sockfd, (struct sockaddr *)&addr3, &serv_len);
-
-    LOGI("Server socket's peer ip : %s\n", inet_ntoa(addr1.sin_addr));
-    LOGI("Server socket's peer port : %d\n", ntohs(addr1.sin_port));
-    LOGI("Server socket's ip : %s\n", inet_ntoa(addr3.sin_addr));
-    LOGI("Server socket's port : %d\n", ntohs(addr3.sin_port));
-    LOGI("\n\n\n\n\n");
-
-    int clnt_peer_err = getpeername(connfd, (struct sockaddr *)&addr2, &clnt_addr_size);
-    int clnt_sock_err = getsockname(connfd, (struct sockaddr *)&addr4, &clnt_addr_size);
-
-    LOGI("Client socket's peer ip : %s\n", inet_ntoa(addr2.sin_addr));
-    LOGI("client socket's peer port %d\n", ntohs(addr2.sin_port));
-    LOGI("Client socket's ip : %s\n", inet_ntoa(addr4.sin_addr));
-    LOGI("Client socket's port : %d\n", ntohs(addr4.sin_port));
-
-
-    // Function for chatting between client and server
-    func(connfd);
-
-    // After chatting close the socket
-    if (connfd > 0) close(connfd);
-    if (sockfd > 0) close(sockfd);
+    LOGI("Closing...");
+    sio_client.sync_close();
+    sio_client.clear_con_listeners();
     return nullptr;
 }
