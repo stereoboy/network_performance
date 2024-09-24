@@ -23,11 +23,38 @@
 #define SERVER_PORT 5002
 #define NAMESPACE "/controller"
 
+//
+// references:
+//  - https://groups.google.com/g/android-ndk/c/UP5v_S0BDdY
+//  - https://developer.android.com/reference/android/os/Build
+//
+const char *const GetDeviceName(JNIEnv *env) {
+    // Fetch the device model as name for now
+    jclass build_class = env->FindClass("android/os/Build");
+    jfieldID model_id = env->GetStaticFieldID(build_class, "DEVICE", "Ljava/lang/String;");
+    jstring model_obj  = (jstring)env->GetStaticObjectField(build_class, model_id);
+    const char *deviceName = env->GetStringUTFChars(model_obj, 0);
+    return deviceName;
+}
+
+const char *const GetModelName(JNIEnv *env) {
+    // Fetch the device model as name for now
+    jclass build_class = env->FindClass("android/os/Build");
+    jfieldID model_id = env->GetStaticFieldID(build_class, "MODEL", "Ljava/lang/String;");
+    jstring model_obj  = (jstring)env->GetStaticObjectField(build_class, model_id);
+    const char *deviceName = env->GetStringUTFChars(model_obj, 0);
+    return deviceName;
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_crazinglab_socketiocpp_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
+
     std::string hello = "[Server]\n - ";
+    hello += "[";
+    hello += GetDeviceName(env);
+    hello += "] ";
     hello += SERVER_HOSTNAME;
     hello += ":" + std::to_string(SERVER_PORT);
     return env->NewStringUTF(hello.c_str());
@@ -35,12 +62,17 @@ Java_com_crazinglab_socketiocpp_MainActivity_stringFromJNI(
 
 static pthread_t app_thread;
 static void *server_thread(void *userdata);
+static std::string device_name;
+static std::string model_name;
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_crazinglab_socketiocpp_MainActivity_initThread(
         JNIEnv* env,
         jobject /* this */) {
 
     LOGI("initThread(...)\n");
+    device_name = GetDeviceName(env);
+    model_name  = GetModelName(env);
     pthread_create(&app_thread, nullptr, server_thread, nullptr);
 }
 
@@ -114,14 +146,15 @@ static void *server_thread(void *userdata)
     // after connection succeeded
 
     // emit message object with lambda ack handler
-    std::string name = "test-controller-cpp-00";
-    std::string type = "test-controller";
-    std::string modelName = "test-controller-cpp";
+
+    std::string name = model_name + "-controller-" + device_name + "-00";
+    std::string type = "mobile-controller";
+    std::string modelName = "android-controller";
 
     sio::message::ptr msg = sio::object_message::create();
-    msg->get_map()["name"] = sio::string_message::create("android-controller-00");
-    msg->get_map()["type"] = sio::string_message::create("mobile-controller");
-    msg->get_map()["modelName"] = sio::string_message::create("android-controller");
+    msg->get_map()["name"] = sio::string_message::create(name);
+    msg->get_map()["type"] = sio::string_message::create(type);
+    msg->get_map()["modelName"] = sio::string_message::create(modelName);
 
 
     sio_client.socket(NAMESPACE)->emit("login", msg, [&](sio::message::list const& msg) {

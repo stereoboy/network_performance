@@ -39,6 +39,9 @@ set_target_properties(OpenSSL::SSL PROPERTIES IMPORTED_LOCATION ${OPENSSL_ROOT_D
 add_library(OpenSSL::Crypto SHARED IMPORTED)
 set_target_properties(OpenSSL::Crypto PROPERTIES IMPORTED_LOCATION ${OPENSSL_ROOT_DIR}/libcrypto.so)
 
+#
+# https://developer.android.com/studio/projects/configure-cmake#include-other-cmake-projects
+#
 add_subdirectory(lib/socket.io-client-cpp)
 
 add_library( # Sets the name of the library.
