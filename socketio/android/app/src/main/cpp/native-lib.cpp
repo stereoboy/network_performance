@@ -19,7 +19,7 @@
 #define  LOGF(...)  __android_log_print(ANDROID_FATAL_ERROR,LOG_TAG,__VA_ARGS__)
 #define  LOGS(...)  __android_log_print(ANDROID_SILENT_ERROR,LOG_TAG,__VA_ARGS__)
 
-#define SERVER_HOSTNAME "localhost"
+#define SERVER_HOSTNAME "192.168.55.75"
 #define SERVER_PORT 5002
 #define NAMESPACE "/controller"
 
@@ -51,10 +51,12 @@ Java_com_crazinglab_socketiocpp_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
 
-    std::string hello = "[Server]\n - ";
-    hello += "[";
+    std::string hello = "[Information]\n - ";
+    hello += "device name: ";
     hello += GetDeviceName(env);
-    hello += "] ";
+    hello += "\n - model name: ";
+    hello += GetModelName(env);
+    hello += "\n - server: ";
     hello += SERVER_HOSTNAME;
     hello += ":" + std::to_string(SERVER_PORT);
     return env->NewStringUTF(hello.c_str());
