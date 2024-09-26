@@ -39,10 +39,21 @@ set_target_properties(OpenSSL::SSL PROPERTIES IMPORTED_LOCATION ${OPENSSL_ROOT_D
 add_library(OpenSSL::Crypto SHARED IMPORTED)
 set_target_properties(OpenSSL::Crypto PROPERTIES IMPORTED_LOCATION ${OPENSSL_ROOT_DIR}/libcrypto.so)
 
+set(distribution_DIR ${CMAKE_SOURCE_DIR}/../../../../distribution/libs/${ANDROID_ABI})
+
+#
+# https://cmake.org/cmake/help/v3.30/variable/BUILD_SHARED_LIBS.html#build-shared-libs
+#
+option(BUILD_SHARED_LIBS "Build the shared library" ON)
+#set(BUILD_SHARED_LIBS ON)
+#set(BUILD_SHARED_LIBS ON CACHE BOOL "Build the shared library")
 #
 # https://developer.android.com/studio/projects/configure-cmake#include-other-cmake-projects
 #
-add_subdirectory(lib/socket.io-client-cpp)
+add_subdirectory(lib/socket.io-client-cpp ${distribution_DIR})
+
+set_target_properties(sioclient     PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${distribution_DIR}")
+set_target_properties(sioclient_tls PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${distribution_DIR}")
 
 add_library( # Sets the name of the library.
              native-lib
